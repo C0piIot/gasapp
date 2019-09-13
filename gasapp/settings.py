@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'price_fetching.apps.PriceFetchingConfig',
+    'django.contrib.gis',
     'stations.apps.StationsConfig',
 ]
 
@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'gasapp.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.contrib.gis.db.backends.spatialite',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
@@ -120,3 +120,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.20.5.0'
+GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so.1'
