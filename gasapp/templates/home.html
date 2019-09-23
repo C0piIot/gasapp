@@ -20,35 +20,48 @@
         {% url 'stations' as stationsUrl %}
         <script>
             let stationsUrl = "{{ stationsUrl|escapejs }}";
-            let map = L.map('map')
-                .setView([40.4168, -3.7038], 14)
-                .locate({setView: true, maxZoom: 14});
+            let map = L.map('map').setView([40.4168, -3.7038], 14);
+            let markers = [];
+                
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
+            map.locate({setView: true, maxZoom: 14});
 
-            map.on('zoomlevelschange resize load viewreset zoomend moveend', async (e) => {
-                let response = await (await fetch(stationsUrl)).json();
-                response.stations.forEach( (station) => {
-                    let s = {};
-                    [
-                        s.pk,
-                        s.name,
-                        s.petrol95,
-                        s.petrol98,
-                        s.gasoil,
-                        s.address,
-                        s.town,
-                        s.city,
-                        s.postal_code,
-                        s.location
-                    ] = station
-                
-                    L.marker(s.location.reverse(), { title: s.name, alt: s.name}).addTo(map);
-
-                });
-                
+            map.on('moveend', async (e) => {
+                if(map.getZoom() > 12){
+                    let params = new URLSearchParams();
+                    //params.append('bbox', map.getBounds().toBBoxString());
+                    let center = map.getBounds().getCenter();
+                    
+                    params.append('center', [center.lng, center.lat].join())
+                    let response = await (await fetch(stationsUrl + '?' + params.toString())).json();
+                    
+                    let newMarkers = response.stations.map( (station) => {
+                        let s = {};
+                        [
+                            s.pk,
+                            s.name,
+                            s.petrol95,
+                            s.petrol98,
+                            s.gasoil,
+                            s.address,
+                            s.town,
+                            s.city,
+                            s.postal_code,
+                            s.location
+                        ] = station
+                    
+                        return L.marker(s.location.reverse(), { title: s.name, alt: s.name}).addTo(map);
+                    });
+                    markers.forEach((marker) => {
+                        map.removeLayer(marker);
+                    });
+                    markers = newMarkers;
+                } else {
+                    //TODO pedir mas zoom
+                }
             });
         </script>
     </body>

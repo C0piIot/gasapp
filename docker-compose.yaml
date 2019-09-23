@@ -1,6 +1,11 @@
 version: '3'
 
 services:
+  gas_db:
+    container_name: gas_db
+    image: mysql
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD="true"
   gas_app:
     container_name: gas_app
     command: python manage.py runserver 0.0.0.0:80
@@ -9,8 +14,9 @@ services:
       - "80:80"
     environment:
       - "DJANGO_DEBUG=True"
-      - "EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend"
     build: 
       context: .      
     volumes:
       - .:/code
+    depends_on:
+      - gas_db

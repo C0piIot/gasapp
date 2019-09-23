@@ -1,11 +1,24 @@
 from django.views.generic.list import BaseListView
+from django.contrib.gis.geos import Polygon, Point
+from django.contrib.gis.db.models.functions import Distance
 from django.http import JsonResponse
 from .models import *
 
 class StationsView(BaseListView):
 
     model = Station
-    paginate_by = 100
+    paginate_by = 300
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        #if 'bbox' in self.request.GET:
+        #    swMapBoundsLon, swMapBoundsLat, neMapBoundsLon, neMapBoundsLat = self.request.GET.get('bbox').split(',')
+        #    bbox = Polygon.from_bbox(swMapBoundsLat, swMapBoundsLon, neMapBoundsLat, neMapBoundsLon)
+        #    queryset = queryset.filter(location__bbcontains=bbox)
+        if 'center' in self.request.GET:
+            lat, lng = self.request.GET.get('center').split(',')
+            queryset = queryset.annotate(distance=Distance("location", Point(float(lat), float(lng), srid=4326))).order_by('distance')
+        return queryset
 
     def render_to_response(self, context):
         return JsonResponse({ 'stations': [[
