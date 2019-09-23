@@ -11,10 +11,6 @@ class StationsView(BaseListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        #if 'bbox' in self.request.GET:
-        #    swMapBoundsLon, swMapBoundsLat, neMapBoundsLon, neMapBoundsLat = self.request.GET.get('bbox').split(',')
-        #    bbox = Polygon.from_bbox(swMapBoundsLat, swMapBoundsLon, neMapBoundsLat, neMapBoundsLon)
-        #    queryset = queryset.filter(location__bbcontains=bbox)
         if 'center' in self.request.GET:
             lat, lng = self.request.GET.get('center').split(',')
             queryset = queryset.annotate(distance=Distance("location", Point(float(lat), float(lng), srid=4326))).order_by('distance')

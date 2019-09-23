@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'gasapp.wsgi.application'
 
 DATABASES = {
     #'default': env.db(default='spatialite:////code/db.sqlite3')
-    'default': env.db(default='mysqlgis://localhost/gas')
+    'default': env.db(default='postgis://postgres@gas_db/postgres')
 }
 
 # Password validation
@@ -117,6 +117,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
-GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.20.5.0'
-GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so.1'

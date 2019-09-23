@@ -3,9 +3,11 @@ version: '3'
 services:
   gas_db:
     container_name: gas_db
-    image: mysql
-    environment:
-      - MYSQL_ALLOW_EMPTY_PASSWORD="true"
+    ports:
+      - "5432:5432"
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-database
   gas_app:
     container_name: gas_app
     command: python manage.py runserver 0.0.0.0:80
@@ -16,6 +18,7 @@ services:
       - "DJANGO_DEBUG=True"
     build: 
       context: .      
+      dockerfile: docker/Dockerfile-app
     volumes:
       - .:/code
     depends_on:

@@ -2,3 +2,4 @@ Django>=2.0,<3.0
 django-debug-toolbar
 gdal==2.3.3
 django-environ
+psycopg2-binary

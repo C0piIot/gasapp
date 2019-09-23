@@ -1,0 +1,14 @@
+FROM python:3-slim
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+RUN mkdir /code
+WORKDIR /code
+COPY requirements.txt /code/
+RUN apt-get update && \
+    apt-get dist-upgrade -y && \
+    apt-get install -y gcc \
+    	zlib1g-dev binutils libproj-dev python3-dev build-essential \
+    	gdal-bin libxml2-dev libxslt1-dev libgdal-dev && \
+    apt-get autoremove --purge -y && \
+	pip install --upgrade pip && \
+	pip install -r requirements.txt
