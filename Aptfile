@@ -1,0 +1,10 @@
+gcc
+zlib1g-dev
+binutils
+libproj-dev
+python3-dev
+build-essential
+gdal-bin
+libxml2-dev
+libxslt1-dev
+libgdal-dev
