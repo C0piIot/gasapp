@@ -6,6 +6,9 @@
     	<style>
     		body { font-family: system-ui, sans-serif; }
             #map { position: absolute; left: 0; bottom: 0; right:0; top:0; z-index: -1; }
+            #location-ask {
+                position: absolute; bottom: 0; right:0; left:0; display:none;
+            }
     	</style>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -16,7 +19,11 @@
     </head>
     <body>
         <div id="map"></div>
-        <p>Hola</p>
+        <div id="location-ask">
+            <p>Es necesario que autorices esta app a utilizar tu localización para centrar el mapa</p>
+            <button type="button" id="location-ok">Aceptar</button>
+            <button type="button" id="location-cancel">Cancelar</button>
+        </div>
         {% url 'stations' as stationsUrl %}
         <script>
             let stationsUrl = "{{ stationsUrl|escapejs }}";
@@ -27,7 +34,7 @@
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            map.locate({setView: true, maxZoom: 14});
+            
 
             map.on('moveend', async (e) => {
                 if(map.getZoom() > 12){
@@ -62,6 +69,27 @@
                 } else {
                     //TODO pedir mas zoom
                 }
+
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            map.setView([postion.coords.longitude, position.coords.latitude], 14);
+                        },
+                        () => {
+                            // failed to get a GPS location before timeout!
+                        }, 
+                        {
+                            enableHighAccuracy: false,
+                            timeout: 4000,
+                            maximumAge: 1000 * 60 * 10
+                        }
+                    );
+
+
+                     //navigator.geolocation.getCurrentPosition(success, error);
+
+                }
+
             });
         </script>
     </body>
