@@ -7,7 +7,7 @@
     		body { font-family: system-ui, sans-serif; }
             #map { position: absolute; left: 0; bottom: 0; right:0; top:0; z-index: -1; }
             #location-ask {
-                position: absolute; bottom: 0; right:0; left:0; display:none;
+                position: absolute; bottom: 0; right:0; left:0;
             }
     	</style>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
@@ -70,25 +70,32 @@
                     //TODO pedir mas zoom
                 }
 
-                if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            map.setView([postion.coords.longitude, position.coords.latitude], 14);
-                        },
-                        () => {
-                            // failed to get a GPS location before timeout!
-                        }, 
-                        {
-                            enableHighAccuracy: false,
-                            timeout: 4000,
-                            maximumAge: 1000 * 60 * 10
-                        }
-                    );
+
+                document.querySelector('#location-ok').addEventListener('click', () => {
+                    if ("geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                map.setView([postion.coords.longitude, position.coords.latitude], 14);
+                            },
+                            () => {
+                                // failed to get a GPS location before timeout!
+                            }, 
+                            {
+                                enableHighAccuracy: false,
+                                timeout: 4000,
+                                maximumAge: 1000 * 60 * 10
+                            }
+                        );
+                    }
+
+
+                });
+                
 
 
                      //navigator.geolocation.getCurrentPosition(success, error);
 
-                }
+                
 
             });
         </script>
