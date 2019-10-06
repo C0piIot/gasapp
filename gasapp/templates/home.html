@@ -6,9 +6,7 @@
     	<style>
     		body { font-family: system-ui, sans-serif; }
             #map { position: absolute; left: 0; bottom: 0; right:0; top:0; z-index: -1; }
-            #location-ask {
-                position: absolute; bottom: 0; right:0; left:0;
-            }
+            .station { font-size: 1.5rem; }
     	</style>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -16,16 +14,21 @@
         <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
    integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
    crossorigin=""></script>
+
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+        <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
     </head>
     <body>
         <div id="map"></div>
-        <div id="location-ask">
-            <p>Es necesario que autorices esta app a utilizar tu localización para centrar el mapa</p>
-            <button type="button" id="location-ok">Aceptar</button>
-            <button type="button" id="location-cancel">Cancelar</button>
-        </div>
         {% url 'stations' as stationsUrl %}
+
+<p id = "status"></p>
+<a id = "map-link" target="_blank"></a>
+
         <script>
+
+	
             let stationsUrl = "{{ stationsUrl|escapejs }}";
             let map = L.map('map').setView([40.4168, -3.7038], 14);
             let markers = [];
@@ -34,13 +37,25 @@
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            
+
+            let icon = L.divIcon({html: '⛽&#xFE0E;', className: 'station'});
+
+            L.control.locate({
+                position: 'topright',
+                locateOptions: {
+                    maxZoom: 17,
+                    enableHighAccuracy: true
+                }
+            }).addTo(map);
 
             map.on('moveend', async (e) => {
                 if(map.getZoom() > 12){
                     let params = new URLSearchParams();
                     //params.append('bbox', map.getBounds().toBBoxString());
                     let center = map.getBounds().getCenter();
+
+                    L.marker(center, { 
+                            title: 'a', alt: 'b', icon: icon}).addTo(map);
                     
                     params.append('center', [center.lng, center.lat].join())
                     let response = await (await fetch(stationsUrl + '?' + params.toString())).json();
@@ -60,7 +75,8 @@
                             s.location
                         ] = station
                     
-                        return L.marker(s.location.reverse(), { title: s.name, alt: s.name}).addTo(map);
+                        return L.marker(s.location.reverse(), { 
+                            title: s.name, alt: s.name, icon: icon}).addTo(map);
                     });
                     markers.forEach((marker) => {
                         map.removeLayer(marker);
@@ -71,11 +87,17 @@
                 }
 
 
-                document.querySelector('#location-ok').addEventListener('click', () => {
+	       });
+        
+		
+/*
+		    document.querySelector('#locationok').addEventListener('click', () => {
+			    console.log('clock');
                     if ("geolocation" in navigator) {
                         navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                map.setView([postion.coords.longitude, position.coords.latitude], 14);
+                            (position) => {console.log('position');
+                                map.setView([position.coords.latitude, position.coords.longitude], 14);
+
                             },
                             () => {
                                 // failed to get a GPS location before timeout!
@@ -90,14 +112,8 @@
 
 
                 });
-                
+                */
 
-
-                     //navigator.geolocation.getCurrentPosition(success, error);
-
-                
-
-            });
         </script>
     </body>
 </html>
