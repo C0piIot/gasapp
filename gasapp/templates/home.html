@@ -6,6 +6,9 @@
     	<style>
     		body { font-family: system-ui, sans-serif; }
             #map { position: absolute; left: 0; bottom: 0; right:0; top:0; z-index: -1; }
+	    #location-ask {
+                position: absolute; bottom: 0; right:0; left:0;
+            }
     	</style>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -16,9 +19,19 @@
     </head>
     <body>
         <div id="map"></div>
-        <p>Hola</p>
+	<div id="location-ask">
+            <p>Es necesario que autorices esta app a utilizar tu localización para centrar el mapa</p>
+            <button type="button" id="locationok">Aceptar</button>
+	</div>
         {% url 'stations' as stationsUrl %}
+
+<button id = "find-me">Show my location</button><br/>
+<p id = "status"></p>
+<a id = "map-link" target="_blank"></a>
+
         <script>
+
+/*		
             let stationsUrl = "{{ stationsUrl|escapejs }}";
             let map = L.map('map').setView([40.4168, -3.7038], 14);
             let markers = [];
@@ -27,9 +40,8 @@
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            map.locate({setView: true, maxZoom: 14});
 
-            map.on('moveend', async (e) => {
+            map.on('moveend', async (e) => {return;
                 if(map.getZoom() > 12){
                     let params = new URLSearchParams();
                     //params.append('bbox', map.getBounds().toBBoxString());
@@ -62,7 +74,62 @@
                 } else {
                     //TODO pedir mas zoom
                 }
-            });
+
+	});
+			console.log('hola');
+		    document.querySelector('#locationok').addEventListener('click', () => {
+			    console.log('clock');
+                    if ("geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {console.log('position');
+                                map.setView([position.coords.latitude, position.coords.longitude], 14);
+                            },
+                            () => {
+                                // failed to get a GPS location before timeout!
+                            }, 
+                            {
+                                enableHighAccuracy: false,
+                                timeout: 4000,
+                                maximumAge: 1000 * 60 * 10
+                            }
+                        );
+                    }
+
+
+                });
+                
+*/
+  function geoFindMe() {
+
+  const status = document.querySelector('#status');
+  const mapLink = document.querySelector('#map-link');
+
+  mapLink.href = '';
+  mapLink.textContent = '';
+
+  function success(position) {
+    const latitude  = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    status.textContent = '';
+    mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+    mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+  }
+
+  function error() {
+    status.textContent = 'Unable to retrieve your location';
+  }
+
+  if (!navigator.geolocation) {
+    status.textContent = 'Geolocation is not supported by your browser';
+  } else {
+    status.textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(success, error);
+  }
+
+}
+
+document.querySelector('#find-me').addEventListener('click', geoFindMe);          
         </script>
     </body>
 </html>
