@@ -53,9 +53,6 @@
                     let params = new URLSearchParams();
                     //params.append('bbox', map.getBounds().toBBoxString());
                     let center = map.getBounds().getCenter();
-
-                    L.marker(center, { 
-                            title: 'a', alt: 'b', icon: icon}).addTo(map);
                     
                     params.append('center', [center.lng, center.lat].join())
                     let response = await (await fetch(stationsUrl + '?' + params.toString())).json();
