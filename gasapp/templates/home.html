@@ -57,6 +57,10 @@
                 }
             }).addTo(map);
 
+            map.on('click', (e) => {
+                qs('#station-info').classList.add('hidden');
+            });
+
             map.on('moveend', async (e) => {
                 if(map.getZoom() > 12){
                     const params = new URLSearchParams();
