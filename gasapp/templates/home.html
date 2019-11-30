@@ -2,11 +2,14 @@
 <html lang="es">
 	<head>
         <meta charset="utf-8">
-    	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     	<style>
-    		body { font-family: system-ui, sans-serif; }
-            #map { position: absolute; left: 0; bottom: 0; right:0; top:0; z-index: -1; }
+            html, body { height: 100%; }
+    		body { font-family: system-ui, sans-serif; padding:0; margin:0; display:flex; flex-direction: column; }
+            #map { flex:1;}
+            #station-info { padding: 1rem; }
             .station { font-size: 1.5rem; }
+            .hidden { display: none; }
     	</style>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -21,24 +24,30 @@
     </head>
     <body>
         <div id="map"></div>
+        <div id="station-info" class="hidden">
+            <h1></h1>
+            <p>
+                <span id="petrol95">⛽ 95 <b></b></span>
+                <span id="petrol98">⛽ 98 <b></b></span>
+                <span id="gasoil">⛽ Gasoil <b></b></span>
+            </p>
+            <address>
+                <p></p>
+                <a href="#" target="_blank" id="directions">⮝ Get directions</a>
+            </address>
+        </div>
         {% url 'stations' as stationsUrl %}
-
-<p id = "status"></p>
-<a id = "map-link" target="_blank"></a>
-
         <script>
-
-	
-            let stationsUrl = "{{ stationsUrl|escapejs }}";
-            let map = L.map('map').setView([40.4168, -3.7038], 14);
             let markers = [];
-                
+            const stationsUrl = "{{ stationsUrl|escapejs }}";
+            const map = L.map('map').setView([40.4168, -3.7038], 14);
+            const icon = L.divIcon({html: '⛽&#xFE0E;', className: 'station'});
+            const qs = function(s){ return document.querySelector(s) };
+            const ios = /iPad|iPhone|iPod/.test(navigator.platform);   
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-
-            let icon = L.divIcon({html: '⛽&#xFE0E;', className: 'station'});
 
             L.control.locate({
                 position: 'topright',
@@ -50,15 +59,15 @@
 
             map.on('moveend', async (e) => {
                 if(map.getZoom() > 12){
-                    let params = new URLSearchParams();
+                    const params = new URLSearchParams();
                     //params.append('bbox', map.getBounds().toBBoxString());
-                    let center = map.getBounds().getCenter();
+                    const center = map.getBounds().getCenter();
                     
                     params.append('center', [center.lng, center.lat].join())
-                    let response = await (await fetch(stationsUrl + '?' + params.toString())).json();
+                    const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
                     
-                    let newMarkers = response.stations.map( (station) => {
-                        let s = {};
+                    const newMarkers = response.stations.map( (station) => {
+                        const s = {};
                         [
                             s.pk,
                             s.name,
@@ -73,7 +82,29 @@
                         ] = station
                     
                         return L.marker(s.location.reverse(), { 
-                            title: s.name, alt: s.name, icon: icon}).addTo(map);
+                            title: s.name, alt: s.name, icon: icon})
+                            .addTo(map)
+                            .on('click', function(){
+                                qs('#station-info h1').textContent = s.name;
+                                const address = s.town != s.city ?
+                                    [ s.address, s.town, s.postal_code, s.city ] :
+                                    [ s.address, s.postal_code, s.city ]
+                                qs('#station-info address p').textContent = address.join(', ');
+                                ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
+                                    if(s[k]){
+                                        qs('#' + k + ' b').textContent = s[k];
+                                    }
+                                    qs('#' + k).classList.toggle('hidden', !s[k]);
+                                });
+                                qs('#station-info').classList.remove('hidden');
+                                const location = s.location.join();
+                                if(ios){
+                                    qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
+                                } else {
+                                    qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
+                                    qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
+                               }
+                            });
                     });
                     markers.forEach((marker) => {
                         map.removeLayer(marker);
@@ -82,34 +113,9 @@
                 } else {
                     //TODO pedir mas zoom
                 }
+	        });
 
-
-	       });
-        
-		
-/*
-		    document.querySelector('#locationok').addEventListener('click', () => {
-			    console.log('clock');
-                    if ("geolocation" in navigator) {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {console.log('position');
-                                map.setView([position.coords.latitude, position.coords.longitude], 14);
-
-                            },
-                            () => {
-                                // failed to get a GPS location before timeout!
-                            }, 
-                            {
-                                enableHighAccuracy: false,
-                                timeout: 4000,
-                                maximumAge: 1000 * 60 * 10
-                            }
-                        );
-                    }
-
-
-                });
-                */
+            map.locate({setView: true, maxZoom: 12});
 
         </script>
     </body>
