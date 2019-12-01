@@ -20,12 +20,13 @@ class StationsView(BaseListView):
         return JsonResponse({ 'stations': [[
                 s.pk,
                 s.name,
-                s.petrol95,
-                s.petrol98,
-                s.gasoil,
+                float(s.petrol95) if s.petrol95 else None,
+                float(s.petrol98) if s.petrol98 else None,
+                float(s.gasoil) if s.gasoil else None,
                 s.address,
                 s.town,
                 s.city,
                 s.postal_code,
-                [coordinate for coordinate in s.location]
+                [coordinate for coordinate in s.location],
+                s.updated.timestamp()
             ] for s in context['object_list']]})

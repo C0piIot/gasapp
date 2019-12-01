@@ -8,6 +8,7 @@
     		body { font-family: system-ui, sans-serif; padding:0; margin:0; display:flex; flex-direction: column; }
             #map { flex:1;}
             #station-info { padding: 1rem; }
+            #petrol95, #petrol95::before { font-family: "Segoe UI Symbol", system-ui, sans-serif; }
             .station { font-size: 1.5rem; }
             .hidden { display: none; }
     	</style>
@@ -33,6 +34,7 @@
                 <p></p>
                 <a href="#" target="_blank" id="directions">⮝ Get directions</a>
             </address>
+            <p><small>Actualizado: <span id="updated"></span></small></p>
         </div>
         {% url 'stations' as stationsUrl %}
         <script>
@@ -80,9 +82,9 @@
                             s.town,
                             s.city,
                             s.postal_code,
-                            s.location
+                            s.location,
+                            s.updated
                         ] = station
-                    
                         return L.marker(s.location.reverse(), { 
                             title: s.name, alt: s.name, icon: icon})
                             .addTo(map)
@@ -94,7 +96,7 @@
                                 qs('#station-info address p').textContent = address.join(', ');
                                 ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
                                     if(s[k]){
-                                        qs('#' + k + ' b').textContent = s[k];
+                                        qs('#' + k + ' b').textContent = s[k].toLocaleString('es', { style: 'currency', currency: 'EUR'});
                                     }
                                     qs('#' + k).classList.toggle('hidden', !s[k]);
                                 });
@@ -106,6 +108,7 @@
                                     qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
                                     qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
                                }
+                               qs('#updated').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
                             });
                     });
                     markers.forEach((marker) => {
@@ -117,7 +120,7 @@
                 }
 	        });
 
-            map.locate({setView: true, maxZoom: 12});
+            map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
 
         </script>
     </body>
