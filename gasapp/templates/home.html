@@ -8,7 +8,25 @@
     		body { font-family: system-ui, sans-serif; padding:0; margin:0; display:flex; flex-direction: column; }
             #map { flex:1;}
             #station-info { padding: 1rem; }
-            .station { font-size: 1.5rem; }
+            .station {
+                padding: 0.2rem;
+                background: white;
+                font-size: 1rem;
+                border: 2px solid green;
+                height: 2rem;
+                width: 2rem;
+                text-align: center;
+            }
+            .station div { 
+                background: green; 
+                color: white;
+                font-size: 0.6rem;
+                font-weight: bold;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
             .hidden { display: none; }
     	</style>
         <link rel="stylesheet" href="{% static 'icons.css' %}">
@@ -32,18 +50,23 @@
             </p>
             <address>
                 <p></p>
-                <a href="#" target="_blank" id="directions">⮝ Get directions</a>
+                <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
             </address>
             <p><small>Actualizado: <span id="updated"></span></small></p>
+        </div>
+        <div id="icon" class="hidden">
+            <i class="fa fa-gas-station"></i>
+            <div>1,22 €</div>
         </div>
         {% url 'stations' as stationsUrl %}
         <script>
             let markers = [];
+            const qs = function(s){ return document.querySelector(s) };
             const stationsUrl = "{{ stationsUrl|escapejs }}";
             const map = L.map('map').setView([40.4168, -3.7038], 14);
-            const icon = L.divIcon({html: '<i class="fa fa-gas-station"></i>', className: 'station'});
-            const qs = function(s){ return document.querySelector(s) };
-            const ios = /iPad|iPhone|iPod/.test(navigator.platform);   
+            const iconTemplate = qs('#icon');
+            const ios = /iPad|iPhone|iPod/.test(navigator.platform);
+            const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -85,8 +108,18 @@
                             s.location,
                             s.updated
                         ] = station
+                        qs('#icon div').textContent = s['petrol95'].toLocaleString('es', currencyOptions);
+                        
                         return L.marker(s.location.reverse(), { 
-                            title: s.name, alt: s.name, icon: icon})
+                                title: s.name, 
+                                alt: s.name, 
+                                icon:  L.divIcon({
+                                    html: iconTemplate.innerHTML, 
+                                    className: 'station',
+                                    iconSize: [30, 30],
+                                    iconAnchor: [30, 30]
+                                }) 
+                            })
                             .addTo(map)
                             .on('click', function(){
                                 qs('#station-info h1').textContent = s.name;
@@ -96,7 +129,7 @@
                                 qs('#station-info address p').textContent = address.join(', ');
                                 ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
                                     if(s[k]){
-                                        qs('#' + k + ' b').textContent = s[k].toLocaleString('es', { style: 'currency', currency: 'EUR'});
+                                        qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
                                     }
                                     qs('#' + k).classList.toggle('hidden', !s[k]);
                                 });
