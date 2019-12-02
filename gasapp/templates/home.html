@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>{% load static %}
 <html lang="es">
 	<head>
         <meta charset="utf-8">
@@ -8,10 +8,10 @@
     		body { font-family: system-ui, sans-serif; padding:0; margin:0; display:flex; flex-direction: column; }
             #map { flex:1;}
             #station-info { padding: 1rem; }
-            #petrol95, #petrol95::before { font-family: "Segoe UI Symbol", system-ui, sans-serif; }
             .station { font-size: 1.5rem; }
             .hidden { display: none; }
     	</style>
+        <link rel="stylesheet" href="{% static 'icons.css' %}">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
    crossorigin="">
@@ -26,9 +26,9 @@
         <div id="station-info" class="hidden">
             <h1></h1>
             <p>
-                <span id="petrol95">⛽ 95 <b></b></span>
-                <span id="petrol98">⛽ 98 <b></b></span>
-                <span id="gasoil">⛽ Gasoil <b></b></span>
+                <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
+                <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
+                <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
             </p>
             <address>
                 <p></p>
@@ -41,7 +41,7 @@
             let markers = [];
             const stationsUrl = "{{ stationsUrl|escapejs }}";
             const map = L.map('map').setView([40.4168, -3.7038], 14);
-            const icon = L.divIcon({html: '⛽&#xFE0E;', className: 'station'});
+            const icon = L.divIcon({html: '<i class="fa fa-gas-station"></i>', className: 'station'});
             const qs = function(s){ return document.querySelector(s) };
             const ios = /iPad|iPhone|iPod/.test(navigator.platform);   
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
