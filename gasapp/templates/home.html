@@ -60,10 +60,10 @@
         </template>
         {% url 'stations' as stationsUrl %}
         <script>
-            let markers = [];
+            let markers = {};
             const qs = function(s){ return document.querySelector(s) };
-            const stationsUrl = "https://gasapp.dropdatabase.es{{ stationsUrl|escapejs }}";
-            const map = L.map('map').setView([40.4168, -3.7038], 14);
+            const stationsUrl = "{{ stationsUrl|escapejs }}";
+            const map = L.map('map', { preferCanvas: true}).setView([40.4168, -3.7038], 14);
             const iconTemplate = qs('#icon').innerHTML;
             const ios = /iPad|iPhone|iPod/.test(navigator.platform);
             const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
@@ -91,71 +91,77 @@
             });
 
             map.on('moveend', async (e) => {
-                if(map.getZoom() > 12){
-                    const params = new URLSearchParams();
-                    //params.append('bbox', map.getBounds().toBBoxString());
-                    const center = map.getBounds().getCenter();
-                    
-                    params.append('center', [center.lng, center.lat].join())
-                    const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
-                    
-                    const newMarkers = response.stations.map( (station) => {
-                        const s = {};
-                        [
-                            s.pk,
-                            s.name,
-                            s.petrol95,
-                            s.petrol98,
-                            s.gasoil,
-                            s.address,
-                            s.town,
-                            s.city,
-                            s.postal_code,
-                            s.location,
-                            s.updated
-                        ] = station
-                        const template = iconTemplate.replace('{price}', s['petrol95'].toLocaleString('es', currencyOptions));
-                        return L.marker(s.location.reverse(), { 
-                                title: s.name, 
-                                alt: s.name, 
-                                icon:  L.divIcon({
-                                    html: template, 
-                                    className: 'station',
-                                    iconSize: [30, 30],
-                                    iconAnchor: [30, 30]
-                                }) 
-                            })
-                            .addTo(map)
-                            .on('click', function(){
-                                qs('#station-info h1').textContent = s.name;
-                                const address = s.town != s.city ?
-                                    [ s.address, s.town, s.postal_code, s.city ] :
-                                    [ s.address, s.postal_code, s.city ]
-                                qs('#station-info address p').textContent = address.join(', ');
-                                ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
-                                    if(s[k]){
-                                        qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
-                                    }
-                                    qs('#' + k).classList.toggle('hidden', !s[k]);
-                                });
-                                qs('#station-info').classList.remove('hidden');
-                                const location = s.location.join();
-                                if(ios){
-                                    qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
-                                } else {
-                                    qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
-                                    qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
-                               }
-                               qs('#updated').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                            });
-                    });
-                    markers.forEach((marker) => {
-                        map.removeLayer(marker);
-                    });
-                    markers = newMarkers;
-                } else {
-                    //TODO pedir mas zoom
+                if(map.getZoom() < 13){
+                    return;
                 }
+                const params = new URLSearchParams();
+                //params.append('bbox', map.getBounds().toBBoxString());
+                const center = map.getBounds().getCenter();
+                
+                params.append('center', [center.lng, center.lat].join())
+                const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
+
+                const newMarkers = {};
+                response.stations.forEach((station) => {
+                    const s = {};
+                    [
+                        s.pk,
+                        s.name,
+                        s.petrol95,
+                        s.petrol98,
+                        s.gasoil,
+                        s.address,
+                        s.town,
+                        s.city,
+                        s.postal_code,
+                        s.location,
+                        s.updated
+                    ] = station;
+                    if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
+                        newMarkers[s.pk] = markers[s.pk];
+                        delete markers[s.pk];
+                    } else {
+                        const template = iconTemplate.replace('{price}', (s['petrol95']|| '--').toLocaleString('es', currencyOptions));
+                        newMarkers[s.pk] = L.marker(s.location.reverse(), { 
+                            title: s.name, 
+                            alt: s.name, 
+                            icon:  L.divIcon({
+                                html: template, 
+                                className: 'station',
+                                iconSize: [30, 30],
+                                iconAnchor: [30, 30]
+                            }) 
+                        })
+                        .addTo(map)
+                        .on('click', function(){
+                            qs('#station-info h1').textContent = s.name;
+                            const address = s.town != s.city ?
+                                [ s.address, s.town, s.postal_code, s.city ] :
+                                [ s.address, s.postal_code, s.city ]
+                            qs('#station-info address p').textContent = address.join(', ');
+                            ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
+                                if(s[k]){
+                                    qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
+                                }
+                                qs('#' + k).classList.toggle('hidden', !s[k]);
+                            });
+                            qs('#station-info').classList.remove('hidden');
+                            const location = s.location.join();
+                            if(ios){
+                                qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
+                            } else {
+                                qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
+                                qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
+                           }
+                           qs('#updated').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
+                        });
+
+                    }
+                });
+                for(k in markers){
+                    map.removeLayer(markers[k]);
+                }
+                markers = newMarkers;
 	        });
 
             map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
