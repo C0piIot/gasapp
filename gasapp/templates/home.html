@@ -6,7 +6,13 @@
     	<style>
             html, body { height: 100%; }
     		body { font-family: system-ui, sans-serif; padding:0; margin:0; display:flex; flex-direction: column; }
+            .hidden { display: none; }
             #map { flex:1;}
+            h1 { 
+                margin:0; 
+                font-size: 1.6rem;
+                font-weight: bold;
+            }
             #station-info { padding: 1rem; }
             .station {
                 padding: 0.2rem;
@@ -27,15 +33,24 @@
                 left: 0;
                 right: 0;
             }
-            .hidden { display: none; }
+            #directions {
+                background-color: blue;
+                color: white;
+                text-decoration: none;
+                padding: 0.4rem 0.8rem;
+                font-style: normal;
+            }
+            address { text-align: right; }
+            address p { text-align: left; }
+            #updated {
+                font-size: 0.6rem;
+                font-style: normal;
+                margin-top: -0.6rem;
+            }
     	</style>
         <link rel="stylesheet" href="{% static 'icons.css' %}">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
-   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-   crossorigin="">
-        <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
-   integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
-   crossorigin=""></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css">
+        <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
         <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
     </head>
@@ -52,7 +67,7 @@
                 <p></p>
                 <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
             </address>
-            <p><small>Actualizado: <span id="updated"></span></small></p>
+            <p id="updated">Actualizado: <span></span></p>
         </div>
         <template id="icon">
             <i class="fa fa-gas-station"></i>
@@ -67,10 +82,6 @@
             const iconTemplate = qs('#icon').innerHTML;
             const ios = /iPad|iPhone|iPod/.test(navigator.platform);
             const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
-            /*L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);*/
             L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
                 attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
                 maxZoom: 18,
@@ -81,7 +92,7 @@
             L.control.locate({
                 position: 'topright',
                 locateOptions: {
-                    maxZoom: 17,
+                    maxZoom: 16,
                     enableHighAccuracy: true
                 }
             }).addTo(map);
@@ -153,7 +164,7 @@
                                 qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
                                 qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
                            }
-                           qs('#updated').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
+                           qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
                         });
 
                     }
