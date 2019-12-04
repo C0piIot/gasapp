@@ -54,17 +54,17 @@
             </address>
             <p><small>Actualizado: <span id="updated"></span></small></p>
         </div>
-        <div id="icon" class="hidden">
+        <template id="icon">
             <i class="fa fa-gas-station"></i>
-            <div>1,22 €</div>
-        </div>
+            <div>{price}</div>
+        </template>
         {% url 'stations' as stationsUrl %}
         <script>
             let markers = [];
             const qs = function(s){ return document.querySelector(s) };
-            const stationsUrl = "{{ stationsUrl|escapejs }}";
+            const stationsUrl = "https://gasapp.dropdatabase.es{{ stationsUrl|escapejs }}";
             const map = L.map('map').setView([40.4168, -3.7038], 14);
-            const iconTemplate = qs('#icon');
+            const iconTemplate = qs('#icon').innerHTML;
             const ios = /iPad|iPhone|iPod/.test(navigator.platform);
             const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
             /*L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -114,13 +114,12 @@
                             s.location,
                             s.updated
                         ] = station
-                        qs('#icon div').textContent = s['petrol95'].toLocaleString('es', currencyOptions);
-                        
+                        const template = iconTemplate.replace('{price}', s['petrol95'].toLocaleString('es', currencyOptions));
                         return L.marker(s.location.reverse(), { 
                                 title: s.name, 
                                 alt: s.name, 
                                 icon:  L.divIcon({
-                                    html: iconTemplate.innerHTML, 
+                                    html: template, 
                                     className: 'station',
                                     iconSize: [30, 30],
                                     iconAnchor: [30, 30]
