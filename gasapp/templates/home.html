@@ -1,182 +1,180 @@
-<!DOCTYPE html>{% load static %}
-<html lang="es">
-	<head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    	<style>
-            html, body { height: 100%; }
-    		body { font-family: system-ui, sans-serif; padding:0; margin:0; display:flex; flex-direction: column; }
-            .hidden { display: none; }
-            #map { flex:1;}
-            h1 { 
-                margin:0; 
-                font-size: 1.6rem;
-                font-weight: bold;
-            }
-            #station-info { padding: 1rem; }
-            .station {
-                padding: 0.2rem;
-                background: white;
-                font-size: 1rem;
-                border: 2px solid green;
-                height: 2rem;
-                width: 2rem;
-                text-align: center;
-            }
-            .station div { 
-                background: green; 
-                color: white;
-                font-size: 0.6rem;
-                font-weight: bold;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-            }
-            #directions {
-                background-color: blue;
-                color: white;
-                text-decoration: none;
-                padding: 0.4rem 0.8rem;
-                font-style: normal;
-            }
-            address { text-align: right; }
-            address p { text-align: left; }
-            #updated {
-                font-size: 0.6rem;
-                font-style: normal;
-                margin-top: -0.6rem;
-            }
-    	</style>
-        <link rel="stylesheet" href="{% static 'icons.css' %}">
-        <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
-        <script src="{% static 'leaflet/leaflet.js' %}"></script>
-        <link rel="stylesheet" href="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.css' %}" />
-        <script src="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
-    </head>
-    <body>
-        <div id="map"></div>
-        <div id="station-info" class="hidden">
-            <h1></h1>
-            <p>
-                <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
-                <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
-                <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
-            </p>
-            <address>
-                <p></p>
-                <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
-            </address>
-            <p id="updated">Actualizado: <span></span></p>
-        </div>
-        <template id="icon">
-            <i class="fa fa-gas-station"></i>
-            <div>{price}</div>
-        </template>
-        {% url 'stations' as stationsUrl %}
-        <script>
-            let markers = {};
-            const qs = function(s){ return document.querySelector(s) };
-            const stationsUrl = "{{ stationsUrl|escapejs }}";
-            const map = L.map('map', { preferCanvas: true}).setView([40.4168, -3.7038], 14);
-            const iconTemplate = qs('#icon').innerHTML;
-            const ios = /iPad|iPhone|iPod/.test(navigator.platform);
-            const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
-            L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-                maxZoom: 18,
-                id: 'mapbox/streets-v11',
-                accessToken: 'pk.eyJ1IjoiZHJvcGRhdGFiYXNlIiwiYSI6ImNrM3Awb2p6eTF6MTQzcHJrNXlnNjJnN3kifQ.CADWtj4kZb6iWr51v9U0MA'
-            }).addTo(map);
+{% extends 'base.html' %}
+{% load static %}
+{% block head_content %}
+{{ block.super }}
+<style>
+    html, body { height: 100%; }
+	body { padding:0; margin:0; display:flex; flex-direction: column; }
+    .hidden { display: none; }
+    #map { flex:1;}
+    h1 { 
+        margin:0; 
+        font-size: 1.6rem;
+        font-weight: bold;
+    }
+    #station-info { padding: 1rem; }
+    .station {
+        padding: 0.2rem;
+        background: white;
+        font-size: 1rem;
+        border: 2px solid green;
+        height: 2rem;
+        width: 2rem;
+        text-align: center;
+    }
+    .station div { 
+        background: green; 
+        color: white;
+        font-size: 0.6rem;
+        font-weight: bold;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    #directions {
+        background-color: blue;
+        color: white;
+        text-decoration: none;
+        padding: 0.4rem 0.8rem;
+        font-style: normal;
+    }
+    address { text-align: right; }
+    address p { text-align: left; }
+    #updated {
+        font-size: 0.6rem;
+        font-style: normal;
+        margin-top: -0.6rem;
+    }
+</style>
+<link rel="stylesheet" href="{% static 'icons.css' %}">
+<link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
+<script src="{% static 'leaflet/leaflet.js' %}"></script>
+<link rel="stylesheet" href="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.css' %}" />
+<script src="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
+{% endblock head_content %}
+{% block body_content %}
+<div id="map"></div>
+<div id="station-info" class="hidden">
+    <h1></h1>
+    <p>
+        <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
+        <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
+        <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
+    </p>
+    <address>
+        <p></p>
+        <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
+    </address>
+    <p id="updated">Actualizado: <span></span></p>
+</div>
+<template id="icon">
+    <i class="fa fa-gas-station"></i>
+    <div>{price}</div>
+</template>
+{% url 'stations' as stationsUrl %}
+{% url 'about' as aboutUrl %}
+<script>
+    let markers = {};
+    const qs = function(s){ return document.querySelector(s) };
+    const stationsUrl = "{{ stationsUrl|escapejs }}";
+    const aboutUrl = "{{ aboutUrl|escapejs }}";
+    const map = L.map('map', { preferCanvas: true}).setView([40.4168, -3.7038], 14);
+    const iconTemplate = qs('#icon').innerHTML;
+    const ios = /iPad|iPhone|iPod/.test(navigator.platform);
+    const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
+    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+        attribution: `<a href="{{ aboutUrl }}">Más información</a>`,
+        maxZoom: 18,
+        id: 'mapbox/streets-v11',
+        accessToken: 'pk.eyJ1IjoiZHJvcGRhdGFiYXNlIiwiYSI6ImNrM3Awb2p6eTF6MTQzcHJrNXlnNjJnN3kifQ.CADWtj4kZb6iWr51v9U0MA'
+    }).addTo(map);
 
-            L.control.locate({
-                position: 'topright',
-                locateOptions: {
-                    maxZoom: 16,
-                    enableHighAccuracy: true
-                }
-            }).addTo(map);
+    L.control.locate({
+        position: 'topright',
+        locateOptions: {
+            maxZoom: 16,
+            enableHighAccuracy: true
+        }
+    }).addTo(map);
 
-            map.on('click', (e) => {
-                qs('#station-info').classList.add('hidden');
-            });
+    map.on('click', (e) => {
+        qs('#station-info').classList.add('hidden');
+    });
 
-            map.on('moveend', async (e) => {
-                if(map.getZoom() < 13){
-                    return;
-                }
-                const params = new URLSearchParams();
-                //params.append('bbox', map.getBounds().toBBoxString());
-                const center = map.getBounds().getCenter();
-                
-                params.append('center', [center.lng, center.lat].join())
-                const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
+    map.on('moveend', async (e) => {
+        if(map.getZoom() < 13){
+            return;
+        }
+        const params = new URLSearchParams();
+        //params.append('bbox', map.getBounds().toBBoxString());
+        const center = map.getBounds().getCenter();
+        
+        params.append('center', [center.lng, center.lat].join())
+        const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
 
-                const newMarkers = {};
-                response.stations.forEach((station) => {
-                    const s = {};
-                    [
-                        s.pk,
-                        s.name,
-                        s.petrol95,
-                        s.petrol98,
-                        s.gasoil,
-                        s.address,
-                        s.town,
-                        s.city,
-                        s.postal_code,
-                        s.location,
-                        s.updated
-                    ] = station;
-                    if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
-                        newMarkers[s.pk] = markers[s.pk];
-                        delete markers[s.pk];
+        const newMarkers = {};
+        response.stations.forEach((station) => {
+            const s = {};
+            [
+                s.pk,
+                s.name,
+                s.petrol95,
+                s.petrol98,
+                s.gasoil,
+                s.address,
+                s.town,
+                s.city,
+                s.postal_code,
+                s.location,
+                s.updated
+            ] = station;
+            if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
+                newMarkers[s.pk] = markers[s.pk];
+                delete markers[s.pk];
+            } else {
+                const template = iconTemplate.replace('{price}', (s['petrol95']|| '--').toLocaleString('es', currencyOptions));
+                newMarkers[s.pk] = L.marker(s.location.reverse(), { 
+                    title: s.name, 
+                    alt: s.name, 
+                    icon:  L.divIcon({
+                        html: template, 
+                        className: 'station',
+                        iconSize: [30, 30],
+                        iconAnchor: [30, 30]
+                    }) 
+                })
+                .addTo(map)
+                .on('click', function(){
+                    qs('#station-info h1').textContent = s.name;
+                    const address = s.town != s.city ?
+                        [ s.address, s.town, s.postal_code, s.city ] :
+                        [ s.address, s.postal_code, s.city ]
+                    qs('#station-info address p').textContent = address.join(', ');
+                    ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
+                        if(s[k]){
+                            qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
+                        }
+                        qs('#' + k).classList.toggle('hidden', !s[k]);
+                    });
+                    qs('#station-info').classList.remove('hidden');
+                    const location = s.location.join();
+                    if(ios){
+                        qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
                     } else {
-                        const template = iconTemplate.replace('{price}', (s['petrol95']|| '--').toLocaleString('es', currencyOptions));
-                        newMarkers[s.pk] = L.marker(s.location.reverse(), { 
-                            title: s.name, 
-                            alt: s.name, 
-                            icon:  L.divIcon({
-                                html: template, 
-                                className: 'station',
-                                iconSize: [30, 30],
-                                iconAnchor: [30, 30]
-                            }) 
-                        })
-                        .addTo(map)
-                        .on('click', function(){
-                            qs('#station-info h1').textContent = s.name;
-                            const address = s.town != s.city ?
-                                [ s.address, s.town, s.postal_code, s.city ] :
-                                [ s.address, s.postal_code, s.city ]
-                            qs('#station-info address p').textContent = address.join(', ');
-                            ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
-                                if(s[k]){
-                                    qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
-                                }
-                                qs('#' + k).classList.toggle('hidden', !s[k]);
-                            });
-                            qs('#station-info').classList.remove('hidden');
-                            const location = s.location.join();
-                            if(ios){
-                                qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
-                            } else {
-                                qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
-                                qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
-                           }
-                           qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                        });
-
-                    }
+                        qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
+                        qs('#station-info a').href = `http://maps.apple.com/?daddr=${location}&dirflg=d`;
+                   }
+                   qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
                 });
-                for(k in markers){
-                    map.removeLayer(markers[k]);
-                }
-                markers = newMarkers;
-	        });
 
-            map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
-
-        </script>
-    </body>
-</html>
+            }
+        });
+        for(k in markers){
+            map.removeLayer(markers[k]);
+        }
+        markers = newMarkers;
+    });
+    map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
+</script>
+{% endblock body_content %}

@@ -1,0 +1,22 @@
+{
+    "name": "GasApp",
+    "short_name": "GasApp",
+    "icons": [
+        {
+            "src": "/static/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "lang": "es-ES",
+    "theme_color": "#a991d4",
+    "background_color": "#a991d4",
+    "start_url": "https://gasapp.dropdatabase.es",
+    "display": "standalone",
+    "scope": "/"
+}

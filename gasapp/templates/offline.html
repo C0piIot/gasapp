@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block head_content %}
+{{ block.super }}
+<meta name="robots" content="noindex,follow">
+{% endblock head_content %}
+{% block body_content %}
+<h1>¡No hay internet!</h1>
+<p>Necesitas conectividad para utilizar GasApp</p>
+<p><a href="{% url 'home' %}">Volver a intentar</a></p>
+{% endblock body_content %}
