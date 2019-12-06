@@ -124,6 +124,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_FINDERS = defaults.STATICFILES_FINDERS + ['compressor.finders.CompressorFinder']
 
-COMPRESS_ENABLED = True
-
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
