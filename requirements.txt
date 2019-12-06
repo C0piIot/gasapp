@@ -3,3 +3,4 @@ django-debug-toolbar
 gdal==2.2.3
 django-environ
 psycopg2-binary
+django_compressor
