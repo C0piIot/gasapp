@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static compress %}
 {% block head_content %}
 {{ block.super }}
+{% compress css inline %}
 <style>
     html, body { height: 100%; }
 	body { padding:0; margin:0; display:flex; flex-direction: column; }
@@ -49,9 +50,8 @@
 </style>
 <link rel="stylesheet" href="{% static 'icons.css' %}">
 <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}">
-<script src="{% static 'leaflet/leaflet.js' %}"></script>
-<link rel="stylesheet" href="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.css' %}" />
-<script src="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
+<link rel="stylesheet" href="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.css' %}">
+{% endcompress %}
 {% endblock head_content %}
 {% block body_content %}
 <div id="map"></div>
@@ -72,6 +72,9 @@
     <i class="fa fa-gas-station"></i>
     <div>{price}</div>
 </template>
+{% compress js inline %}
+<script src="{% static 'leaflet/leaflet.js' %}"></script>
+<script src="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
 {% url 'stations' as stationsUrl %}
 {% url 'about' as aboutUrl %}
 <script>
@@ -177,4 +180,5 @@
     });
     map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
 </script>
+{% endcompress %}
 {% endblock body_content %}
