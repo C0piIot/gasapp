@@ -24,7 +24,7 @@ env = environ.Env()
 SECRET_KEY = 'o%5^qd_iu+@n2c5k0c3kn8g*v!o%x^x01mw$c&(og%tig=wmfu'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [ 'localhost', 'gasapp.dropdatabase.es', ]
 
