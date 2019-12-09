@@ -13,7 +13,7 @@ self.addEventListener('install', function(event) {
       });
   }));
 });
-/*
+
 self.addEventListener('fetch', function(event) {
   event.respondWith(
     fetch(event.request).catch(function(error) {
@@ -22,7 +22,7 @@ self.addEventListener('fetch', function(event) {
       });
     }
   ));
-});*/
+});
 self.addEventListener('refreshOffline', function(response) {
   return caches.open('offline').then(function(cache) {
     return cache.put(offlinePage, response);
