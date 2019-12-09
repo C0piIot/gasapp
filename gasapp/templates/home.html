@@ -72,7 +72,7 @@
     <i class="fa fa-gas-station"></i>
     <div>{price}</div>
 </template>
-{% compress js inline %}
+{% compress js %}
 <script src="{% static 'leaflet/leaflet.js' %}"></script>
 <script src="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
 {% url 'stations' as stationsUrl %}
