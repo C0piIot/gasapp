@@ -66,7 +66,7 @@
         <p></p>
         <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
     </address>
-    <p id="updated">Actualizado: <span></span></p>
+    <p id="updated">Actualizado: <span></span>[<span id="nav"></span>]</p>
 </div>
 <template id="icon">
     <i class="fa fa-gas-station"></i>
@@ -80,6 +80,9 @@
 <script>
     let markers = {};
     const qs = function(s){ return document.querySelector(s) };
+
+    qs('#nav').textContent(navigator.platform);
+
     const stationsUrl = "{{ stationsUrl|escapejs }}";
     const aboutUrl = "{{ aboutUrl|escapejs }}";
     const map = L.map('map', { preferCanvas: true}).setView([40.4168, -3.7038], 14);
