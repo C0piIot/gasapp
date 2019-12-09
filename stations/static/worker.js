@@ -15,13 +15,11 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    fetch(event.request).catch(function(error) {
-      return caches.open('offline').then(function(cache) {
-        return cache.match('/offline/');
-      });
-    }
-  ));
+  if(!navigator.onLine){
+    event.respondWith(caches.open('offline').then(function(cache) {
+      return cache.match('/offline/');
+    }));
+  }
 });
 self.addEventListener('refreshOffline', function(response) {
   return caches.open('offline').then(function(cache) {
