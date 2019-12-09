@@ -179,6 +179,10 @@
         markers = newMarkers;
     });
     map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/worker.js', { scope: '/' });
+    }
 </script>
 {% endcompress %}
 {% endblock body_content %}
