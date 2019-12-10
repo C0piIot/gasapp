@@ -113,7 +113,7 @@
         //params.append('bbox', map.getBounds().toBBoxString());
         const center = map.getBounds().getCenter();
         
-        params.append('center', [center.lng, center.lat].join())
+        params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join())
         const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
 
         const newMarkers = {};
