@@ -24,7 +24,6 @@ class StationsView(BaseListView):
                 float(s.petrol98) if s.petrol98 else None,
                 float(s.gasoil) if s.gasoil else None,
                 s.address,
-                s.town,
                 s.city,
                 s.postal_code,
                 [coordinate for coordinate in s.location],

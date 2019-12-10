@@ -126,7 +126,6 @@
                 s.petrol98,
                 s.gasoil,
                 s.address,
-                s.town,
                 s.city,
                 s.postal_code,
                 s.location,
@@ -150,9 +149,7 @@
                 .addTo(map)
                 .on('click', function(){
                     qs('#station-info h1').textContent = s.name;
-                    const address = s.town != s.city ?
-                        [ s.address, s.town, s.postal_code, s.city ] :
-                        [ s.address, s.postal_code, s.city ]
+                    const address = [ s.address, s.postal_code, s.city ];
                     qs('#station-info address p').textContent = address.join(', ');
                     ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
                         if(s[k]){
