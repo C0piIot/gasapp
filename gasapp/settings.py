@@ -24,7 +24,7 @@ env = environ.Env()
 SECRET_KEY = 'o%5^qd_iu+@n2c5k0c3kn8g*v!o%x^x01mw$c&(og%tig=wmfu'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = env.bool('DJANGO_DEBUG', default=False)
 
 ALLOWED_HOSTS = [ 'localhost', 'gasapp.dropdatabase.es', ]
 
@@ -125,3 +125,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_FINDERS = defaults.STATICFILES_FINDERS + ['compressor.finders.CompressorFinder']
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
+
+if DEBUG:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }

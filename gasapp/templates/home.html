@@ -18,13 +18,13 @@
         padding: 0.2rem;
         background: white;
         font-size: 1rem;
-        border: 2px solid green;
+        border: 2px solid dimgray;
         height: 2rem;
         width: 2rem;
         text-align: center;
     }
     .station div { 
-        background: green; 
+        background: dimgray; 
         color: white;
         font-size: 0.6rem;
         font-weight: bold;
@@ -33,6 +33,13 @@
         left: 0;
         right: 0;
     }
+    .station.cheap { border-color: green; }
+    .station.cheap div { background: green; }
+    .station.medium { border-color: orangered; }
+    .station.medium div { background: orangered; }
+    .station.expensive { border-color: darkred; }
+    .station.expensive div { background: darkred; }
+
     #directions {
         background-color: blue;
         color: white;
@@ -79,6 +86,7 @@
 {% url 'about' as aboutUrl %}
 <script>
     let markers = {};
+    const fuel = 'petrol95';
     const qs = function(s){ return document.querySelector(s) };
     const stationsUrl = "{{ stationsUrl|escapejs }}";
     const aboutUrl = "{{ aboutUrl|escapejs }}";
@@ -117,6 +125,7 @@
         const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
 
         const newMarkers = {};
+        let maxPrice = 0, minPrice = Number.MAX_VALUE;
         response.stations.forEach((station) => {
             const s = {};
             [
@@ -131,17 +140,23 @@
                 s.location,
                 s.updated
             ] = station;
+            if(s[fuel]){
+                minPrice = s[fuel] < minPrice ? s[fuel] : minPrice;
+                maxPrice = s[fuel] > maxPrice ? s[fuel] : maxPrice;
+            }
+
             if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
                 newMarkers[s.pk] = markers[s.pk];
                 delete markers[s.pk];
             } else {
-                const template = iconTemplate.replace('{price}', (s['petrol95']|| '--').toLocaleString('es', currencyOptions));
+                const template = iconTemplate.replace('{price}', (s[fuel]|| '--').toLocaleString('es', currencyOptions));
                 newMarkers[s.pk] = L.marker(s.location.reverse(), { 
                     title: s.name, 
                     alt: s.name, 
+                    price: s[fuel]|| false,
                     icon:  L.divIcon({
                         html: template, 
-                        className: 'station',
+                        className: 'station station-' + s.pk,
                         iconSize: [30, 30],
                         iconAnchor: [30, 30]
                     }) 
@@ -166,13 +181,28 @@
                    }
                    qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
                 });
-
             }
         });
         for(k in markers){
             map.removeLayer(markers[k]);
         }
+        const firstThird = minPrice + ((maxPrice - minPrice) / 3),
+            secondThird = maxPrice - ((maxPrice - minPrice) / 3);
         markers = newMarkers;
+        for(k in markers){
+            const price = markers[k].options.price;
+            const icon = qs('.station-' + k);
+            if(price > secondThird){
+                icon.classList.remove('cheap', 'medium');
+                icon.classList.add('expensive');
+            } else if(price > firstThird){
+                icon.classList.remove('cheap', 'expensive');
+                icon.classList.add('medium');
+            } else if(price) {
+                icon.classList.remove('expensive', 'medium');
+                icon.classList.add('cheap');
+            }
+        }
     });
     map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
 
