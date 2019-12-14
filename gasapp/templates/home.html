@@ -13,7 +13,8 @@
         font-size: 1.6rem;
         font-weight: bold;
     }
-    #station-info { padding: 1rem; }
+    #station-info, #fuel-selector { padding: 1rem; }
+    #fuel-selector p { margin-top: 1rem; text-align: center;}
     .station {
         padding: 0.2rem;
         background: white;
@@ -75,6 +76,17 @@
     </address>
     <p id="updated">Actualizado: <span></span></p>
 </div>
+<div id="fuel-selector" class="hidden">
+    <h1>Combustible preferido</h1>
+    <p>
+        <select>
+            <option value="petrol95">Sin plomo 95 - E5/E10</option>
+            <option value="petrol98">Sin plomo 98 - E10</option>
+            <option value="gasoil">Gasoil - B7</option>
+        </select>
+        <button type="button">Guardar</button>
+    </p>
+</div>
 <template id="icon">
     <i class="fa fa-gas-station"></i>
     <div>{price}</div>
@@ -86,43 +98,38 @@
 {% url 'about' as aboutUrl %}
 <script>
     let markers = {};
-    const fuel = 'petrol95';
+    let fuel = localStorage.getItem('fuel') || 'petrol95';
     const qs = function(s){ return document.querySelector(s) };
     const stationsUrl = "{{ stationsUrl|escapejs }}";
     const aboutUrl = "{{ aboutUrl|escapejs }}";
     const iconTemplate = qs('#icon').innerHTML;
     const ios = /iPad|iPhone|iPod/.test(navigator.platform);
     const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
-    const map = L.map('map', { 
-        preferCanvas: true,
-        zoomControl: false,
-        layers: [
-            L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-                attribution: `<a href="{{ aboutUrl }}">Más información</a>`,
-                maxZoom: 18,
-                id: 'mapbox/streets-v11',
-                accessToken: 'pk.eyJ1IjoiZHJvcGRhdGFiYXNlIiwiYSI6ImNrM3Awb2p6eTF6MTQzcHJrNXlnNjJnN3kifQ.CADWtj4kZb6iWr51v9U0MA'
-            })
-        ]
-    }).setView([40.4168, -3.7038], 14);
-    L.control.locate({
-        position: 'topright',
-        locateOptions: {
-            maxZoom: 16,
-            enableHighAccuracy: true
-        }
-    }).addTo(map);
-    L.control.zoom({position:'topright'}).addTo(map);
-    map.on('click', (e) => {
-        qs('#station-info').classList.add('hidden');
-    });
+    const FuelControl = L.Control.extend({
+        options: { position: 'topright' },
+        onAdd: (map) => {
+            var container = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
+            link = L.DomUtil.create('a', '', container);
 
-    map.on('moveend', async (e) => {
+            link.href = '#';
+            link.title = 'Carburante preferido';
+            link.innerHTML = '<i class="fa fa-gas-station"></i>';
+
+            L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', function () {
+                qs('#fuel-selector select').value = fuel;
+                qs('#fuel-selector').classList.remove('hidden');
+                qs('#station-info').classList.add('hidden');
+            });
+
+            return container;
+        }
+    });
+    async function updateStations(){
         const params = new URLSearchParams();
         //params.append('bbox', map.getBounds().toBBoxString());
         const center = map.getBounds().getCenter();
         
-        params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join())
+        params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
         const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
 
         const newMarkers = {};
@@ -174,6 +181,7 @@
                         qs('#' + k).classList.toggle('hidden', !s[k]);
                     });
                     qs('#station-info').classList.remove('hidden');
+                    qs('#fuel-selector').classList.add('hidden');
                     const location = s.location.join();
                     if(ios){
                         qs('#station-info a').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
@@ -204,9 +212,49 @@
                 icon.classList.add('cheap');
             }
         }
-    });
-    map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
+    };
 
+
+    const map = L.map('map', { 
+        preferCanvas: true,
+        zoomControl: false,
+        layers: [
+            L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+                attribution: `<a href="{{ aboutUrl }}">GasApp - Más información</a>`,
+                maxZoom: 18,
+                id: 'mapbox/streets-v11',
+                accessToken: 'pk.eyJ1IjoiZHJvcGRhdGFiYXNlIiwiYSI6ImNrM3Awb2p6eTF6MTQzcHJrNXlnNjJnN3kifQ.CADWtj4kZb6iWr51v9U0MA'
+            })
+        ]
+        })
+        .setView([40.4168, -3.7038], 14)
+        .locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10})
+        .addControl(L.control.locate({
+                position: 'topright',
+                locateOptions: {
+                    maxZoom: 16,
+                    enableHighAccuracy: true
+                }
+            }))
+        .addControl(L.control.zoom({position:'topright'}))
+        .addControl(new FuelControl())
+        .on('click', () => { qs('#station-info').classList.add('hidden'); })
+        .on('moveend', updateStations);
+
+    map.attributionControl.setPrefix(false);
+
+
+
+    qs('#fuel-selector button').addEventListener('click', () => {
+        fuel = qs('#fuel-selector select').value;
+        localStorage.setItem('fuel', fuel);
+        for(k in markers){
+            map.removeLayer(markers[k]);
+        }
+        markers = [];
+        updateStations();
+    });
+    
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/worker.js', { scope: '/' });
     }
