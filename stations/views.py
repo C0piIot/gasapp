@@ -7,7 +7,7 @@ from .models import *
 class StationsView(BaseListView):
 
     model = Station
-    paginate_by = 300
+    paginate_by = 150
 
     def get_queryset(self):
         queryset = super().get_queryset()
