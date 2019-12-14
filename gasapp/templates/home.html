@@ -238,7 +238,7 @@
             }))
         .addControl(L.control.zoom({position:'topright'}))
         .addControl(new FuelControl())
-        .on('click', () => { qs('#station-info').classList.add('hidden'); })
+        .on('click', () => { qs('#station-info').classList.add('hidden'); qs('#fuel-selector').classList.add('hidden'); })
         .on('moveend', updateStations);
 
     map.attributionControl.setPrefix(false);
@@ -252,6 +252,7 @@
             map.removeLayer(markers[k]);
         }
         markers = [];
+        qs('#fuel-selector').classList.add('hidden');
         updateStations();
     });
     
