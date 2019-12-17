@@ -18,6 +18,7 @@
     h1 a {  
         text-decoration: none;
         color: inherit;
+        margin-left: 1rem;
     }
     #station-info, #fuel-selector { padding: 1rem; }
     #fuel-selector p { margin-top: 1rem; text-align: center;}
@@ -275,11 +276,7 @@
         shareAnchor.classList.remove('hidden');
         shareAnchor.addEventListener('click', (e) => {
             e.preventDefault();
-            navigator.share({
-              title: qs('#station-info h1 span').textContent,
-              text: qs('#station-info address p').textContent,
-              url: this.href
-            });
+            navigator.share({ url: this.href });
         });
     }
     
