@@ -1,9 +1,9 @@
 @font-face {
   font-family: 'gasapp';
   src:
-    url('fonts/gasapp.ttf?xt41la') format('truetype'),
-    url('fonts/gasapp.woff?xt41la') format('woff'),
-    url('fonts/gasapp.svg?xt41la#gasapp') format('svg');
+    url('fonts/gasapp.ttf?kiuldv') format('truetype'),
+    url('fonts/gasapp.woff?kiuldv') format('woff'),
+    url('fonts/gasapp.svg?kiuldv#gasapp') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -24,12 +24,15 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.fa-share:before {
+  content: "\e900";
+}
 .fa-navigation:before {
   content: "\e902";
 }
 .fa-gas-station:before {
-  content: "\e900";
+  content: "\e901";
 }
 .fa-map-marker:before {
-  content: "\e901";
+  content: "\e903";
 }

@@ -7,11 +7,17 @@
     html, body { height: 100%; }
 	body { padding:0; margin:0; display:flex; flex-direction: column; }
     .hidden { display: none; }
-    #map { flex:1;}
+    #map { flex:1; }
     h1 { 
         margin:0; 
         font-size: 1.6rem;
         font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+    }
+    h1 a {  
+        text-decoration: none;
+        color: inherit;
     }
     #station-info, #fuel-selector { padding: 1rem; }
     #fuel-selector p { margin-top: 1rem; text-align: center;}
@@ -64,7 +70,7 @@
 {% block body_content %}
 <div id="map"></div>
 <div id="station-info" class="hidden">
-    <h1></h1>
+    <h1><span></span><a href="#" title="Compartir" class="hidden"><i class="fa fa-share"></i></a></h1>
     <p>
         <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
         <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
@@ -98,8 +104,11 @@
 {% url 'about' as aboutUrl %}
 <script>
     let markers = {};
+    let lat, lon, stationId;
+    [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
     let fuel = localStorage.getItem('fuel') || 'petrol95';
     const qs = function(s){ return document.querySelector(s) };
+    const shareAnchor = qs('#station-info h1 a');
     const stationsUrl = "{{ stationsUrl|escapejs }}";
     const aboutUrl = "{{ aboutUrl|escapejs }}";
     const iconTemplate = qs('#icon').innerHTML;
@@ -158,20 +167,8 @@
                 delete markers[s.pk];
             } else {
                 const template = iconTemplate.replace('{price}', (s[fuel]|| '--').toLocaleString('es', currencyOptions));
-                newMarkers[s.pk] = L.marker(s.location.reverse(), { 
-                    title: s.name, 
-                    alt: s.name, 
-                    price: s[fuel]|| false,
-                    icon:  L.divIcon({
-                        html: template, 
-                        className: 'station station-' + s.pk,
-                        iconSize: [30, 30],
-                        iconAnchor: [30, 30]
-                    }) 
-                })
-                .addTo(map)
-                .on('click', function(){
-                    qs('#station-info h1').textContent = s.name;
+                const showMarker = function(){
+                    qs('#station-info h1 span').textContent = s.name;
                     const address = [ s.address, s.postal_code, s.city ];
                     qs('#station-info address p').textContent = address.join(', ');
                     ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
@@ -184,12 +181,29 @@
                     qs('#fuel-selector').classList.add('hidden');
                     const location = s.location.join();
                     if(ios){
-                        qs('#station-info a').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
+                        qs('#directions').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
                     } else {
-                        qs('#station-info a').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
+                        qs('#directions').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
                    }
                    qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                });
+                   shareAnchor.href = `/#${location},${s.pk}`;
+                };
+                if(stationId == s.pk){
+                    showMarker();
+                }
+                newMarkers[s.pk] = L.marker(s.location.reverse(), { 
+                    title: s.name, 
+                    alt: s.name, 
+                    price: s[fuel]|| false,
+                    icon:  L.divIcon({
+                        html: template, 
+                        className: 'station station-' + s.pk,
+                        iconSize: [30, 30],
+                        iconAnchor: [30, 30]
+                    }) 
+                })
+                .addTo(map)
+                .on('click', showMarker);
             }
         });
         for(k in markers){
@@ -227,8 +241,7 @@
             })
         ]
         })
-        .setView([40.4168, -3.7038], 14)
-        .locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10})
+        .setView([lat || 40.4168, lon || -3.7038], 14)
         .addControl(L.control.locate({
                 position: 'topright',
                 locateOptions: {
@@ -240,10 +253,12 @@
         .addControl(new FuelControl())
         .on('click', () => { qs('#station-info').classList.add('hidden'); qs('#fuel-selector').classList.add('hidden'); })
         .on('moveend', updateStations);
+    if(!lat && !lon) {
+        map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
+    }
+    updateStations();
 
     map.attributionControl.setPrefix(false);
-
-
 
     qs('#fuel-selector button').addEventListener('click', () => {
         fuel = qs('#fuel-selector select').value;
@@ -255,6 +270,18 @@
         qs('#fuel-selector').classList.add('hidden');
         updateStations();
     });
+
+    if ('share' in navigator) {
+        shareAnchor.classList.remove('hidden');
+        shareAnchor.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigator.share({
+              title: qs('#station-info h1 span').textContent,
+              text: qs('#station-info address p').textContent,
+              url: this.href
+            });
+        });
+    }
     
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/worker.js', { scope: '/' });
