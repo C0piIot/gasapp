@@ -274,7 +274,7 @@
 
     if ('share' in navigator) {
         shareAnchor.classList.remove('hidden');
-        shareAnchor.addEventListener('click', (e) => {
+        shareAnchor.addEventListener('click', function(e) {
             e.preventDefault();
             navigator.share({ url: this.href });
         });
