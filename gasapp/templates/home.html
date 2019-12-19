@@ -113,7 +113,7 @@
     const stationsUrl = "{{ stationsUrl|escapejs }}";
     const aboutUrl = "{{ aboutUrl|escapejs }}";
     const iconTemplate = qs('#icon').innerHTML;
-    const ios = /iPad|iPhone|iPod/.test(navigator.platform);
+    const ios = /iPad|iPhone|iPod|Darwin/.test(navigator.platform) && !window.MSStream;
     const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
     const FuelControl = L.Control.extend({
         options: { position: 'topright' },
@@ -184,7 +184,7 @@
                     if(ios){
                         qs('#directions').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
                     } else {
-                        qs('#directions').href = `https://maps.google.com/maps?daddr=${location}&amp;ll=`;
+                        qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
                    }
                    qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
                    shareAnchor.href = `/#${location},${s.pk}`;
