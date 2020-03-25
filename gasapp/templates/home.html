@@ -105,7 +105,7 @@
 {% url 'about' as aboutUrl %}
 <script>
     let latestFetchUrl = '';
-    let latestFetchDate = new Date(0);
+    let latestFetchTime = 0;
     let markers = {};
     let lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
@@ -144,11 +144,11 @@
         params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
         const url = stationsUrl + '?' + params.toString();
         const now = new Date();
-        if(url == latestFetchUrl && (now.getTime() -  latestFetchDate) < 600) { //no repetir petición solo por mover un poco
+        if(url == latestFetchUrl && (now.getTime() -  latestFetchTime) < 600000) { //no repetir petición solo por mover un poco
             return;
         }
         latestFetchUrl = url;
-        latestFetchDate = now;
+        latestFetchTime = now.getTime();
 
         const response = await (await fetch(url)).json();        
         const newMarkers = {};
