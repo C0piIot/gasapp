@@ -104,6 +104,8 @@
 {% url 'stations' as stationsUrl %}
 {% url 'about' as aboutUrl %}
 <script>
+    let latestFetchUrl = '';
+    let latestFetchDate = new Date(0);
     let markers = {};
     let lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
@@ -140,8 +142,15 @@
         const center = map.getBounds().getCenter();
         
         params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
-        const response = await (await fetch(stationsUrl + '?' + params.toString())).json();
+        const url = stationsUrl + '?' + params.toString();
+        const now = new Date();
+        if(url == latestFetchUrl && (now.getTime() -  latestFetchDate) < 600) { //no repetir petición solo por mover un poco
+            return;
+        }
+        latestFetchUrl = url;
+        latestFetchDate = now;
 
+        const response = await (await fetch(url)).json();        
         const newMarkers = {};
         let maxPrice = 0, minPrice = Number.MAX_VALUE;
         response.stations.forEach((station) => {
