@@ -144,8 +144,10 @@
         params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
         const url = stationsUrl + '?' + params.toString();
         const now = new Date();
-        if(!force && (url == latestFetchUrl) && (now.getTime() -  latestFetchTime) < 600000) { //no repetir petición solo por mover un poco
-            return;
+        if((url == latestFetchUrl) && (now.getTime() -  latestFetchTime) < 600000) { //no repetir petición solo por mover un poco
+            if(force !== true){
+                return;
+            }
         }
         latestFetchUrl = url;
         latestFetchTime = now.getTime();
