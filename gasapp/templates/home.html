@@ -104,46 +104,45 @@
 {% url 'stations' as stationsUrl %}
 {% url 'about' as aboutUrl %}
 <script>
-    let latestFetchUrl = '';
-    let latestFetchTime = 0;
-    let markers = {};
-    let lat, lon, stationId;
+    let latestFetchUrl = '',
+        latestFetchTime = 0,
+        markers = {},
+        fuel = localStorage.getItem('fuel') || 'petrol95',
+        lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
-    let fuel = localStorage.getItem('fuel') || 'petrol95';
-    const qs = function(s){ return document.querySelector(s) };
-    const shareAnchor = qs('#station-info h1 a');
-    const stationsUrl = "{{ stationsUrl|escapejs }}";
-    const aboutUrl = "{{ aboutUrl|escapejs }}";
-    const iconTemplate = qs('#icon').innerHTML;
-    const ios = /iPad|iPhone|iPod|Darwin/.test(navigator.platform) && !window.MSStream;
-    const currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3};
-    const FuelControl = L.Control.extend({
-        options: { position: 'topright' },
-        onAdd: (map) => {
-            var container = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
-            link = L.DomUtil.create('a', '', container);
+    const qs = s =>  document.querySelector(s),
+        shareAnchor = qs('#station-info h1 a'),
+        stationsUrl = "{{ stationsUrl|escapejs }}",
+        aboutUrl = "{{ aboutUrl|escapejs }}",
+        iconTemplate = qs('#icon').innerHTML,
+        ios = /iPad|iPhone|iPod|Darwin/.test(navigator.platform) && !window.MSStream,
+        currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3},
+        FuelControl = L.Control.extend({
+            options: { position: 'topright' },
+            onAdd: (map) => {
+                var container = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
+                link = L.DomUtil.create('a', '', container);
 
-            link.href = '#';
-            link.title = 'Carburante preferido';
-            link.innerHTML = '<i class="fa fa-gas-station"></i>';
+                link.href = '#';
+                link.title = 'Carburante preferido';
+                link.innerHTML = '<i class="fa fa-gas-station"></i>';
 
-            L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', function () {
-                qs('#fuel-selector select').value = fuel;
-                qs('#fuel-selector').classList.remove('hidden');
-                qs('#station-info').classList.add('hidden');
-            });
+                L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', function () {
+                    qs('#fuel-selector select').value = fuel;
+                    qs('#fuel-selector').classList.remove('hidden');
+                    qs('#station-info').classList.add('hidden');
+                });
 
-            return container;
-        }
-    });
+                return container;
+            }
+        });
     async function updateStations(force){
-        const params = new URLSearchParams();
-        //params.append('bbox', map.getBounds().toBBoxString());
-        const center = map.getBounds().getCenter();
+        const params = new URLSearchParams(),
+            center = map.getBounds().getCenter();
         
         params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
-        const url = stationsUrl + '?' + params.toString();
-        const now = new Date();
+        const url = stationsUrl + '?' + params.toString(),
+            now = new Date();
         if((url == latestFetchUrl) && (now.getTime() -  latestFetchTime) < 600000) { //no repetir petición solo por mover un poco
             if(force !== true){
                 return;
@@ -152,8 +151,8 @@
         latestFetchUrl = url;
         latestFetchTime = now.getTime();
 
-        const response = await (await fetch(url)).json();        
-        const newMarkers = {};
+        const response = await (await fetch(url)).json(),       
+            newMarkers = {};
         let maxPrice = 0, minPrice = Number.MAX_VALUE;
         response.stations.forEach((station) => {
             const s = {};
@@ -178,28 +177,28 @@
                 newMarkers[s.pk] = markers[s.pk];
                 delete markers[s.pk];
             } else {
-                const template = iconTemplate.replace('{price}', (s[fuel]|| '--').toLocaleString('es', currencyOptions));
-                const showMarker = function(){
-                    qs('#station-info h1 span').textContent = s.name;
-                    const address = [ s.address, s.postal_code, s.city ];
-                    qs('#station-info address p').textContent = address.join(', ');
-                    ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
-                        if(s[k]){
-                            qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
-                        }
-                        qs('#' + k).classList.toggle('hidden', !s[k]);
-                    });
-                    qs('#station-info').classList.remove('hidden');
-                    qs('#fuel-selector').classList.add('hidden');
-                    const location = s.location.join();
-                    if(ios){
-                        qs('#directions').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
-                    } else {
-                        qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
-                   }
-                   qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                   shareAnchor.href = `/#${location},${s.pk}`;
-                };
+                const template = iconTemplate.replace('{price}', (s[fuel]|| '--').toLocaleString('es', currencyOptions)),
+                    showMarker = () => {
+                        qs('#station-info h1 span').textContent = s.name;
+                        const address = [ s.address, s.postal_code, s.city ],
+                            location = s.location.join();
+                        qs('#station-info address p').textContent = address.join(', ');
+                        ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
+                            if(s[k]){
+                                qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
+                            }
+                            qs('#' + k).classList.toggle('hidden', !s[k]);
+                        });
+                        qs('#station-info').classList.remove('hidden');
+                        qs('#fuel-selector').classList.add('hidden');
+                        if(ios){
+                            qs('#directions').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
+                        } else {
+                            qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
+                       }
+                       qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
+                       shareAnchor.href = `/#${location},${s.pk}`;
+                    };
                 if(stationId == s.pk){
                     showMarker();
                 }
@@ -225,8 +224,8 @@
             secondThird = maxPrice - ((maxPrice - minPrice) / 3);
         markers = newMarkers;
         for(k in markers){
-            const price = markers[k].options.price;
-            const icon = qs('.station-' + k);
+            const price = markers[k].options.price,
+                icon = qs('.station-' + k);
             if(price > secondThird){
                 icon.classList.remove('cheap', 'medium');
                 icon.classList.add('expensive');
