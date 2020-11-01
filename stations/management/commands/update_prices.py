@@ -14,9 +14,9 @@ class Command(BaseCommand):
             keys = {}
             with transaction.atomic():
                 for station in stations:
-                    petrol95 = station['Precio Gasolina 95 Protección']
-                    petrol98 = station['Precio Gasolina  98']
-                    gasoil = station['Precio Gasoleo A'] or station['Precio Nuevo Gasoleo A']
+                    petrol95 = station['Precio Gasolina 95 E5']
+                    petrol98 = station['Precio Gasolina 98 E5']
+                    gasoil = station['Precio Gasoleo A'] or station['Precio Gasoleo Premium']
 
                     if petrol98 or petrol95 or gasoil:
 

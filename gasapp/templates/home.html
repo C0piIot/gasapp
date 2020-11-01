@@ -244,13 +244,19 @@
         preferCanvas: true,
         zoomControl: false,
         layers: [
-            L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            L.tileLayer('https://atlas.microsoft.com/map/tile?subscription-key={subscriptionKey}&api-version=2.0&tilesetId={tilesetId}&zoom={z}&x={x}&y={y}&tileSize=256&language={language}&view={view}', {
+                attribution: `<a href="{{ aboutUrl }}">GasApp - Más información</a>`,
+                subscriptionKey: 'kdsNtJnhq11QdGcl1Vze7pMe1tDWBVxb5kSr4aaGJkI',
+                tilesetId: 'microsoft.base.road',
+                language: 'es-ES',
+                view: 'Auto'
+            })
+            /*L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
                 attribution: `<a href="{{ aboutUrl }}">GasApp - Más información</a>`,
                 maxZoom: 18,
                 id: 'mapbox/streets-v11',
                 accessToken: 'pk.eyJ1IjoiZHJvcGRhdGFiYXNlIiwiYSI6ImNrM3Awb2p6eTF6MTQzcHJrNXlnNjJnN3kifQ.CADWtj4kZb6iWr51v9U0MA'
-            })
-        ]
+            })*/        ]
         })
         .setView([lat || 40.4168, lon || -3.7038], 14)
         .addControl(L.control.locate({
