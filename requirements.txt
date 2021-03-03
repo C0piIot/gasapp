@@ -1,4 +1,4 @@
-Django>=2.0,<3.0
+Django
 django-debug-toolbar
 gdal==2.2.3
 django-environ
