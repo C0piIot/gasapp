@@ -7,6 +7,7 @@ from .models import *
 class StationsView(BaseListView):
 
     model = Station
+    paginate_by = 100
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -14,7 +15,7 @@ class StationsView(BaseListView):
             lat, lng = self.request.GET.get('center').split(',')
             p = Point(float(lat), float(lng), srid=4326)
             queryset = queryset.annotate(distance=Distance("location", p))
-            queryset = queryset.filter(location__dwithin=(p, 0.2))
+            queryset = queryset.filter(location__dwithin=(p, 0.4)).order_by('distance')
         return queryset.values(
             'pk', 'name', 'petrol95', 'petrol98', 'gasoil', 'address', 'city', 'postal_code', 'location', 'updated'
         )
