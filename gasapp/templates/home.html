@@ -237,7 +237,6 @@
         }
     };
 
-
     const map = L.map('map', { 
         preferCanvas: true,
         zoomControl: false,
@@ -249,7 +248,7 @@
                 language: 'es-ES',
                 view: 'Auto'
             })
-        })
+        ]})
         .setView([lat || 40.4168, lon || -3.7038], 14)
         .addControl(L.control.locate({
                 position: 'topright',
