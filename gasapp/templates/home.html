@@ -102,7 +102,6 @@
 <script src="{% static 'leaflet/leaflet.js' %}"></script>
 <script src="{% static 'leaflet-locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
 {% url 'stations' as stationsUrl %}
-{% url 'about' as aboutUrl %}
 <script>
     let latestFetchUrl = '',
         latestFetchTime = 0,
@@ -113,7 +112,6 @@
     const qs = s =>  document.querySelector(s),
         shareAnchor = qs('#station-info h1 a'),
         stationsUrl = "{{ stationsUrl|escapejs }}",
-        aboutUrl = "{{ aboutUrl|escapejs }}",
         iconTemplate = qs('#icon').innerHTML,
         ios = /iPad|iPhone|iPod|Darwin/.test(navigator.platform) && !window.MSStream,
         currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3},
@@ -245,18 +243,12 @@
         zoomControl: false,
         layers: [
             L.tileLayer('https://atlas.microsoft.com/map/tile?subscription-key={subscriptionKey}&api-version=2.0&tilesetId={tilesetId}&zoom={z}&x={x}&y={y}&tileSize=256&language={language}&view={view}', {
-                attribution: `<a href="{{ aboutUrl }}">GasApp - Más información</a>`,
+                attribution: `©<a href="//tomtom.com">TomTom</a>, <a href="//microsoft.com">Microsoft</a>, <a href="//openstreetmap.org">OSM</a>, <a href="//leafletjs.com">Leaflet</a>, <a href="//dropdatabase.es">Más</a>`,
                 subscriptionKey: 'kdsNtJnhq11QdGcl1Vze7pMe1tDWBVxb5kSr4aaGJkI',
                 tilesetId: 'microsoft.base.road',
                 language: 'es-ES',
                 view: 'Auto'
             })
-            /*L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-                attribution: `<a href="{{ aboutUrl }}">GasApp - Más información</a>`,
-                maxZoom: 18,
-                id: 'mapbox/streets-v11',
-                accessToken: 'pk.eyJ1IjoiZHJvcGRhdGFiYXNlIiwiYSI6ImNrM3Awb2p6eTF6MTQzcHJrNXlnNjJnN3kifQ.CADWtj4kZb6iWr51v9U0MA'
-            })*/        ]
         })
         .setView([lat || 40.4168, lon || -3.7038], 14)
         .addControl(L.control.locate({
