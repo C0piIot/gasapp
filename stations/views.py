@@ -15,7 +15,8 @@ class StationsView(BaseListView):
             lat, lng = self.request.GET.get('center').split(',')
             p = Point(float(lat), float(lng), srid=4326)
             queryset = queryset.annotate(distance=Distance("location", p))
-            queryset = queryset.filter(location__dwithin=(p, 0.4)).order_by('distance')
+            #queryset = queryset.filter(location__dwithin=(p, 0.4)).order_by('distance') #Mysql
+            queryset = queryset.order_by('distance')[:200] #Spatialite
         return queryset.values(
             'pk', 'name', 'petrol95', 'petrol98', 'gasoil', 'address', 'city', 'postal_code', 'location', 'updated'
         )
