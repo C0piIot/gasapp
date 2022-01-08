@@ -56,6 +56,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'gasapp.wsgi.application'
+DEFAULT_AUTO_FIELD='django.db.models.BigAutoField' 
 
 
 # Database
