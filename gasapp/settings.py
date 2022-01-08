@@ -61,10 +61,9 @@ WSGI_APPLICATION = 'gasapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-#DATABASES = {
-#   'default': env.db(default='spatialite:///' + os.path.join(BASE_DIR, 'db.sqlite3'))
-#}
-from gasapp.settings_local import *
+DATABASES = {
+   'default': env.db(default='spatialite:///' + os.path.join(BASE_DIR, 'db.sqlite3'))
+}
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
