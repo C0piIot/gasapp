@@ -19,5 +19,5 @@
     "background_color": "#ffffff",
     "start_url": "https://gasapp.dropdatabase.es",
     "display": "standalone",
-    "orientation": "orientation"
+    "orientation": "any"
 }
