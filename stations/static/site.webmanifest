@@ -18,6 +18,6 @@
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
     "start_url": "https://gasapp.dropdatabase.es",
-    "display": "standalone",
+    "display": "fullscreen",
     "orientation": "any"
 }
