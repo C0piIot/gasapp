@@ -1,0 +1,6 @@
+[{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target" : { "namespace": "android_app", "package_name": "es.dropdatabase.gasapp.twa",
+                     "sha256_cert_fingerprints": ["EB:27:77:F6:75:B6:15:B9:DC:97:10:09:F9:FA:EA:FD:9A:DC:CE:11:1B:7D:A8:6D:93:E9:86:92:8C:44:69:EA"] }
+      }
+]
