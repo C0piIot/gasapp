@@ -2,7 +2,7 @@
     "name": "GasApp",
     "short_name": "GasApp",
     "lang": "es-ES",
-    "description": "Compara precios de las gasolineras más cercanas o en tu ruta. Precios actualizados cada día. ¡Sin anuncios!",
+    "description": "Compara precios de las gasolineras más cercanas o en tu ruta. Precios actualizados cada día. Sin publicidad.",
     "icons": [
         {
             "src": "/static/android-chrome-192x192.png",
