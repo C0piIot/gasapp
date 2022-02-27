@@ -22,7 +22,7 @@
     "start_url": "https://gasapp.dropdatabase.es",
     "display": "fullscreen",
     "orientation": "any",
-    "categories": ["travel", "business", "finance"]
+    "categories": ["travel", "business", "finance"],
     "screenshots" : [
         {
             "src": "/static/android-overview.jpeg",
