@@ -17,7 +17,7 @@
             "purpose": "any maskable"
         }
     ],
-    "theme_color": "#ffffff",
+    "theme_color": "#000000",
     "background_color": "#ffffff",
     "start_url": "https://gasapp.dropdatabase.es",
     "display": "fullscreen",
