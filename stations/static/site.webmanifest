@@ -1,6 +1,8 @@
 {
     "name": "GasApp",
     "short_name": "GasApp",
+    "lang": "es-ES",
+    "description": "Compara precios de las gasolineras más cercanas o en tu ruta. Precios actualizados cada día. ¡Sin anuncios!",
     "icons": [
         {
             "src": "/static/android-chrome-192x192.png",
@@ -21,4 +23,27 @@
     "display": "fullscreen",
     "orientation": "any",
     "categories": ["travel", "business", "finance"]
+    "screenshots" : [
+        {
+            "src": "/static/android-overview.jpeg",
+            "sizes": "720x1440",
+            "type": "image/jpeg",
+            "platform": "narrow",
+            "label": "Descubre de un vistazo las gasolineras cercanas"
+        },
+        {
+            "src": "/static/android-detail.jpeg",
+            "sizes": "720x1440",
+            "type": "image/jpeg",
+            "platform": "narrow",
+            "label": "Compara precios y obtén la ruta en coche"
+        },
+        {
+            "src": "/static/android-selection.jpeg",
+            "sizes": "720x1440",
+            "type": "image/jpeg",
+            "platform": "narrow",
+            "label": "Selecciona el combustible de tu coche"
+        }
+    ]
 }
