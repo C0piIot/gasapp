@@ -20,7 +20,7 @@
     "theme_color": "#000000",
     "background_color": "#ffffff",
     "start_url": "https://⛽.dropdatabase.es",
-    "display": "fullscreen",
+    "display": "standalone",
     "orientation": "any",
     "categories": ["travel", "business", "finance"],
     "screenshots" : [
@@ -45,5 +45,6 @@
             "platform": "narrow",
             "label": "Selecciona el combustible de tu coche"
         }
-    ]
+    ],
+    "iarc_rating_id": "5c6a16b9-2dfc-4d24-a4d8-ce47dbca6746"
 }
