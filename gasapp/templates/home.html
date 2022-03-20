@@ -125,7 +125,7 @@
                 link.title = 'Carburante preferido';
                 link.innerHTML = '<i class="fa fa-gas-station"></i>';
 
-                L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', function () {
+                L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', () => {
                     qs('#fuel-selector select').value = fuel;
                     qs('#fuel-selector').classList.remove('hidden');
                     qs('#station-info').classList.add('hidden');
@@ -134,7 +134,7 @@
                 return container;
             }
         });
-    async function updateStations(force){
+    async function updateStations(force) {
         const params = new URLSearchParams(),
             center = map.getBounds().getCenter();
         
@@ -167,8 +167,8 @@
                 s.updated
             ] = station;
             if(s[fuel]){
-                minPrice = s[fuel] < minPrice ? s[fuel] : minPrice;
-                maxPrice = s[fuel] > maxPrice ? s[fuel] : maxPrice;
+                minPrice = Math.min(s[fuel], minPrice);
+                maxPrice = Math.max(s[fuel], maxPrice);
             }
 
             if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
@@ -195,7 +195,7 @@
                             qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
                        }
                        qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                       shareAnchor.href = `/#${location},${s.pk}`;
+                       shareAnchor.href = `https://⛽.dropdatabase.es/#${location},${s.pk}`;
                     };
                 if(stationId == s.pk){
                     showMarker();
@@ -281,9 +281,9 @@
 
     if ('share' in navigator) {
         shareAnchor.classList.remove('hidden');
-        shareAnchor.addEventListener('click', function(e) {
+        shareAnchor.addEventListener('click', (e) => {
             e.preventDefault();
-            navigator.share({ url: this.href });
+            navigator.share({ url: shareAnchor.href });
         });
     }
     
