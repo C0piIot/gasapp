@@ -195,7 +195,7 @@
                             qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
                        }
                        qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                       shareAnchor.href = `https://⛽.dropdatabase.es/#${location},${s.pk}`;
+                       shareAnchor.dataset.url = `https://⛽.dropdatabase.es/#${location},${s.pk}`;
                     };
                 if(stationId == s.pk){
                     showMarker();
@@ -283,7 +283,7 @@
         shareAnchor.classList.remove('hidden');
         shareAnchor.addEventListener('click', (e) => {
             e.preventDefault();
-            navigator.share({ url: shareAnchor.href });
+            navigator.share({ url: shareAnchor.dataset.url });
         });
     }
     
