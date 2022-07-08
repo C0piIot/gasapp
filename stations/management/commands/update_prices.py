@@ -13,10 +13,19 @@ class Command(BaseCommand):
             stations = json.loads(response.read())['ListaEESSPrecio']
             keys = {}
             with transaction.atomic():
+                l = 0
+                com = 0
+                biodie = 0
+                etan = 0
+                gasonu =0
+                gases =0
+                prem95 = 0
+                prem98 = 0
                 for station in stations:
-                    petrol95 = station['Precio Gasolina 95 E5']
-                    petrol98 = station['Precio Gasolina 98 E5']
+                    petrol95 = station['Precio Gasolina 95 E5'] or station['Precio Gasolina 95 E5 Premium']
+                    petrol98 = station['Precio Gasolina 98 E5'] or station['Precio Gasolina 98 E10']
                     gasoil = station['Precio Gasoleo A'] or station['Precio Gasoleo Premium']
+                    glp = station['Precio Gases licuados del petróleo']
 
                     if petrol98 or petrol95 or gasoil:
 
@@ -33,10 +42,9 @@ class Command(BaseCommand):
                                 'petrol95': petrol95.replace(',', '.') if petrol95 else None,
                                 'petrol98': petrol98.replace(',', '.') if petrol98 else None,
                                 'gasoil': gasoil.replace(',', '.') if gasoil else None,
+                                'glp': glp.replace(',', '.') if glp else None,
                                 'location': Point(
                                     float(station['Longitud (WGS84)'].replace(',','.')), 
                                     float(station['Latitud'].replace(',','.'))
                                 )
                         })
-
-

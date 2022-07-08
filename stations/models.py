@@ -14,38 +14,9 @@ class Station(models.Model):
     gasoil = models.DecimalField(_('gasoil'), max_digits=6, decimal_places=3, blank=True, null=True)
     petrol95 = models.DecimalField(_('gasolina 95'), max_digits=6, decimal_places=3, blank=True, null=True)
     petrol98 = models.DecimalField(_('gasolina 98'), max_digits=6, decimal_places=3, blank=True, null=True)
+    glp = models.DecimalField(_('GLP'), max_digits=6, decimal_places=3, blank=True, null=True)
     location = gis_models.PointField(_('location'))
 
     class Meta:
         verbose_name = _('station')
         verbose_name_plural = _('stations')
-
-
-
-    '''
-https://gis.stackexchange.com/questions/141533/geodjango-find-all-points-within-radius
-{'C.P.': '01240', 
-'Dirección': 'CL MANISITU, 9',
- 'Horario': 'L-D: 24H',
-
- 'Latitud': '42,846028', 
- 'Localidad': 'ALEGRIA-DULANTZI', 
- 'Longitud (WGS84)': '-2,509361', 
- 'Margen': 'D', 
- 'Municipio': 'Alegría-Dulantzi',
-  'Precio Biodiesel': None, 
-  'Precio Bioetanol': None, 
-  'Precio Gas Natural Comprimido': None, 
-  'Precio Gas Natural Licuado': None,
-   'Precio Gases licuados del petróleo': None, 
-   'Precio Gasoleo A': '1,269',
-    'Precio Gasoleo B': '0,726', 
-    'Precio Gasolina 95 Protección': None,
-     'Precio Gasolina  98': None, 
-     'Precio Nuevo Gasoleo A': None, 
- 'Provincia': 'ÁLAVA',
-  'Remisión': 'dm', 
-  'Rótulo': 'PREMIRA ENERGIA NORTE, S.L.', 
-  'Tipo Venta': 'P', '% BioEtanol': '0,0', '% Éster metílico': '0,0',
-   'IDEESS': '9381', 'IDMunicipio': '1', 'IDProvincia': '01', 'IDCCAA': '16'}'''
-

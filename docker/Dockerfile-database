@@ -1,6 +1,0 @@
-FROM postgres
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-RUN apt-get update && \
-	apt-get dist-upgrade -y && \
-	apt-get install -y --no-install-recommends postgresql-$PG_MAJOR-postgis-3 postgresql-$PG_MAJOR-postgis-3-scripts

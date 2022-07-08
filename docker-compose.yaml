@@ -1,13 +1,6 @@
 version: '3'
 
 services:
-  gas_db:
-    container_name: gas_db
-    ports:
-      - "5432:5432"
-    build:
-      context: .
-      dockerfile: docker/Dockerfile-database
   gas_app:
     container_name: gas_app
     command: python manage.py runserver 0.0.0.0:80
@@ -21,5 +14,3 @@ services:
       dockerfile: docker/Dockerfile-app
     volumes:
       - .:/code
-    depends_on:
-      - gas_db

@@ -4,11 +4,12 @@ ENV PYTHONDONTWRITEBYTECODE 1
 RUN mkdir /code
 WORKDIR /code
 COPY requirements.txt /code/
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get dist-upgrade -y && \
     apt-get install -y gcc \
     	zlib1g-dev binutils libproj-dev python3-dev build-essential \
-    	gdal-bin libxml2-dev libxslt1-dev libgdal-dev && \
+    	gdal-bin libxml2-dev libxslt1-dev libgdal-dev libsqlite3-mod-spatialite && \
     apt-get autoremove --purge -y && \
 	pip install --upgrade pip && \
 	pip install -r requirements.txt

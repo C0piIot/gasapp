@@ -21,6 +21,7 @@
         margin-left: 1rem;
     }
     #station-info, #fuel-selector { padding: 1rem; }
+    #station-info p.prices>span { white-space: nowrap; margin-right: 12px; }
     #fuel-selector p { margin-top: 1rem; text-align: center;}
     .station {
         padding: 0.2rem;
@@ -72,10 +73,11 @@
 <div id="map"></div>
 <div id="station-info" class="hidden">
     <h1><span></span><a href="#" title="Compartir" class="hidden"><i class="fa fa-share"></i></a></h1>
-    <p>
+    <p class="prices">
         <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
         <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
         <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
+        <span id="glp"><i class="fa fa-gas-station"></i> GLP <b></b></span>
     </p>
     <address>
         <p></p>
@@ -90,6 +92,7 @@
             <option value="petrol95">Sin plomo 95 - E5/E10</option>
             <option value="petrol98">Sin plomo 98 - E10</option>
             <option value="gasoil">Gasoil - B7</option>
+            <option value="glp">GLP</option>
         </select>
         <button type="button">Guardar</button>
     </p>
@@ -160,6 +163,7 @@
                 s.petrol95,
                 s.petrol98,
                 s.gasoil,
+                s.glp,
                 s.address,
                 s.city,
                 s.postal_code,
@@ -181,7 +185,7 @@
                         const address = [ s.address, s.postal_code, s.city ],
                             location = s.location.join();
                         qs('#station-info address p').textContent = address.join(', ');
-                        ['petrol95', 'petrol98', 'gasoil'].forEach((k) => {
+                        ['petrol95', 'petrol98', 'gasoil', 'glp'].forEach((k) => {
                             if(s[k]){
                                 qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
                             }

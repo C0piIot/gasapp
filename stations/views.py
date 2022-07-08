@@ -18,7 +18,7 @@ class StationsView(BaseListView):
             #queryset = queryset.filter(location__dwithin=(p, 0.4)).order_by('distance') #Mysql
             queryset = queryset.order_by('distance')[:200] #Spatialite
         return queryset.values(
-            'pk', 'name', 'petrol95', 'petrol98', 'gasoil', 'address', 'city', 'postal_code', 'location', 'updated'
+            'pk', 'name', 'petrol95', 'petrol98', 'gasoil', 'glp', 'address', 'city', 'postal_code', 'location', 'updated'
         )
 
     def render_to_response(self, context):
@@ -28,6 +28,7 @@ class StationsView(BaseListView):
                 float(s['petrol95']) if s['petrol95'] else None,
                 float(s['petrol98']) if s['petrol98'] else None,
                 float(s['gasoil']) if s['gasoil'] else None,
+                float(s['glp']) if s['glp'] else None,
                 s['address'],
                 s['city'],
                 s['postal_code'],
