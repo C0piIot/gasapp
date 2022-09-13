@@ -3,14 +3,15 @@ version: '3'
 services:
   gas_app:
     container_name: gas_app
-    command: python manage.py runserver 0.0.0.0:80
+    #command: python manage.py runserver 0.0.0.0:80
     #command: django-admin.py startproject gasapp .
     ports:
       - "80:80"
     environment:
-      - "DJANGO_DEBUG=True"
+      - "DEBUG=True"
+      - "SECRET_KEY=xxxxxx"
     build: 
       context: .      
       dockerfile: docker/Dockerfile-app
-    volumes:
-      - .:/code
+    #volumes:
+    #  - .:/code

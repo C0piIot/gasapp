@@ -21,12 +21,12 @@ env = environ.Env()
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'o%5^qd_iu+@n2c5k0c3kn8g*v!o%x^x01mw$c&(og%tig=wmfu'
+SECRET_KEY = env('SECRET_KEY', default='xxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DJANGO_DEBUG', default=False)
+DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = [ 'localhost', 'gasapp.dropdatabase.es', ]
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost'])
 
 
 # Application definition

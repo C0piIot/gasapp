@@ -1,6 +1,5 @@
 Django
 django-debug-toolbar
-gdal==3.2.2
 django-environ
-psycopg2-binary
 django_compressor
+uwsgi

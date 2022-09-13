@@ -1,15 +1,19 @@
 FROM python:3-slim
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
-RUN mkdir /code
-WORKDIR /code
-COPY requirements.txt /code/
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get dist-upgrade -y && \
-    apt-get install -y gcc \
-    	zlib1g-dev binutils libproj-dev python3-dev build-essential \
-    	gdal-bin libxml2-dev libxslt1-dev libgdal-dev libsqlite3-mod-spatialite && \
-    apt-get autoremove --purge -y && \
-	pip install --upgrade pip && \
-	pip install -r requirements.txt
+    apt-get install -y python3-gdal libsqlite3-mod-spatialite python3-dev build-essential && \
+    apt-get autoremove --purge -y
+RUN pip install --upgrade pip
+RUN mkdir /code
+WORKDIR /code
+COPY requirements.txt /code/
+RUN	pip install -r requirements.txt
+COPY . /code/
+RUN python manage.py migrate
+RUN python manage.py update_prices
+RUN python manage.py collectstatic --no-input
+CMD ["uwsgi", "/code/docker/uwsgi.ini"]
+#CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
