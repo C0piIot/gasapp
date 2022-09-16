@@ -14,6 +14,10 @@ processes = []
   allowed_public_ports = []
   auto_rollback = true
 
+[[statics]]
+  guest_path = "/code/static"
+  url_prefix = "/static"
+
 [[services]]
   http_checks = []
   internal_port = 80
