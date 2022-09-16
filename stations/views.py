@@ -1,16 +1,18 @@
 from django.views.generic.list import BaseListView
+from django.http import HttpResponse
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
 from django.http import JsonResponse
+from django.views import View
 from .models import *
+from datetime import datetime, timedelta
 
 class StationsView(BaseListView):
-
     model = Station
     paginate_by = 100
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(updated__gt=datetime.now() - timedelta(days=7))
         if 'center' in self.request.GET:
             lat, lng = self.request.GET.get('center').split(',')
             p = Point(float(lat), float(lng), srid=4326)
@@ -35,3 +37,10 @@ class StationsView(BaseListView):
                 [coordinate for coordinate in s['location']],
                 s['updated'].timestamp()
             ] for s in context['object_list']]})
+
+
+
+class UpdatePricesView(View):
+    def post(self, request):
+        Station.update_prices()
+        return HttpResponse("ok")

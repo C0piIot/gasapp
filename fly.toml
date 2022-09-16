@@ -19,7 +19,6 @@ processes = []
   url_prefix = "/static"
 
 [[services]]
-  http_checks = []
   internal_port = 80
   processes = ["app"]
   protocol = "tcp"
@@ -39,7 +38,18 @@ processes = []
     port = 443
 
   [[services.tcp_checks]]
-    grace_period = "1s"
+    grace_period = "15s"
     interval = "15s"
     restart_limit = 0
     timeout = "2s"
+
+  [[services.http_checks]]
+    interval = 900000
+    grace_period = "15s"
+    method = "post"
+    path = "/update_prices/"
+    protocol = "http"
+    restart_limit = 0
+    timeout = 300000
+    tls_skip_verify = false
+    [services.http_checks.headers]
