@@ -44,7 +44,7 @@ processes = []
     timeout = "2s"
 
   [[services.http_checks]]
-    interval = 900000
+    interval = 1000000
     grace_period = "15s"
     method = "post"
     path = "/update_prices/"

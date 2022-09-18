@@ -109,9 +109,7 @@ STATICFILES_FINDERS = defaults.STATICFILES_FINDERS + ['compressor.finders.Compre
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
 
-if DEBUG:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
+CACHES = {
+    #'default': env.cache_url(default='dummycache://') 
+    'default': env.cache_url(default='filecache:////cache') 
+}
