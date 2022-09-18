@@ -46,7 +46,7 @@ processes = []
   [[services.http_checks]]
     interval = 1000000
     grace_period = "15s"
-    method = "post"
+    method = "get"
     path = "/update_prices/"
     protocol = "http"
     restart_limit = 0

@@ -41,6 +41,6 @@ class StationsView(BaseListView):
 
 
 class UpdatePricesView(View):
-    def post(self, request):
+    def get(self, request):
         Station.update_prices()
         return HttpResponse("ok")

@@ -110,5 +110,5 @@ STATICFILES_FINDERS = defaults.STATICFILES_FINDERS + ['compressor.finders.Compre
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
 
 CACHES = {
-    'default': env.cache_url(default='dummycache://')
+    'default': env.cache_url(default='dummycache://') 
 }
