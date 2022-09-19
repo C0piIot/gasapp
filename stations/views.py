@@ -4,6 +4,7 @@ from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
 from django.http import JsonResponse
 from django.views import View
+from django.core.cache import cache
 from .models import *
 from datetime import datetime, timedelta
 
@@ -38,9 +39,3 @@ class StationsView(BaseListView):
                 s['updated'].timestamp()
             ] for s in context['object_list']]})
 
-
-
-class UpdatePricesView(View):
-    def get(self, request):
-        Station.update_prices()
-        return HttpResponse("ok")
