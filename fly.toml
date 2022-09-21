@@ -11,6 +11,8 @@ processes = []
 [env]
   CACHE_URL = "filecache:////cache"
   ALLOWED_HOSTS = "gasapp.fly.dev,gasapp.dropdatabase.es"
+  DATABASE_URL= "spatialite:////data/gasapp.sqlite3"
+  
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
@@ -18,10 +20,9 @@ processes = []
 #[deploy]
 #  release_command = "sh /code/docker/release.sh"
 
-[processes]
-  web = "uwsgi /code/docker/uwsgi.ini"
-  update_prices = "sh /code/docker/update_prices.sh"
-
+[mounts]
+  source="gasapp"
+  destination="/data"
 
 [[statics]]
   guest_path = "/code/static"
@@ -29,7 +30,6 @@ processes = []
 
 [[services]]
   internal_port = 80
-  processes = ["web"]
   protocol = "tcp"
   script_checks = []
   [services.concurrency]
