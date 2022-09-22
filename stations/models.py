@@ -50,7 +50,7 @@ class Station(models.Model):
     @classmethod
     def update_prices(cls):
         with request.urlopen(request.Request(cls.PRICES_URL, headers={'Accept': 'application/xml'})) as response:
-            with transaction.atomic():
+            #with transaction.atomic():
                 for event, elem in ET.iterparse(response, events=("end",)):
                     if event == 'end' and elem.tag == STATION:
                         cls.update_station(elem)
