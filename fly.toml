@@ -9,6 +9,7 @@ processes = []
   dockerfile = "docker/Dockerfile-app"
 
 [env]
+  SWAP = "1"
   CACHE_URL = "filecache:////cache"
   ALLOWED_HOSTS = "gasapp.fly.dev,gasapp.dropdatabase.es,xn--sbi.dropdatabase.es"
   

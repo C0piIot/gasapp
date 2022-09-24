@@ -1,5 +1,7 @@
 #!/bin/bash
 
+if [[ ! -z "$SWAP" ]]; then fallocate -l 128M swapfile && chmod 600 swapfile && mkswap swapfile && swapon swapfile && ls -hla; fi;
+
 python manage.py migrate
 while true; do python manage.py update_prices; echo "Prices updated"; sleep 3600; done&
 uwsgi /code/docker/uwsgi.ini
