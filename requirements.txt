@@ -1,5 +1,4 @@
 Django
-django-debug-toolbar
 django-environ
 django_compressor
 uwsgi
