@@ -12,6 +12,5 @@ services:
       - "SECRET_KEY=xxxxxx"
     build: 
       context: .      
-      dockerfile: docker/Dockerfile-app
     volumes:
       - .:/code

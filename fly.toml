@@ -6,7 +6,7 @@ kill_timeout = 5
 processes = []
 
 [build]
-  dockerfile = "docker/Dockerfile-app"
+  dockerfile = "Dockerfile"
 
 [env]
   SWAP = "1"
