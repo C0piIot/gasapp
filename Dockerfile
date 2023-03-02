@@ -1,4 +1,4 @@
-FROM python:3-slim
+FROM python:3-slim AS base
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ARG DEBIAN_FRONTEND=noninteractive
@@ -12,6 +12,10 @@ RUN mkdir /cache
 WORKDIR /app
 COPY requirements.txt /app/
 RUN	pip install -r requirements.txt
+CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
+
+FROM base AS prod
 COPY . /app/
 RUN python manage.py collectstatic --no-input
 CMD ["bash", "/app/entrypoint.sh"]
+
