@@ -17,11 +17,9 @@ processes = []
   allowed_public_ports = []
   auto_rollback = true
 
-#[deploy]
-#  release_command = "sh /code/docker/release.sh"
 
 [[statics]]
-  guest_path = "/code/static"
+  guest_path = "/app/static"
   url_prefix = "/static"
 
 [[services]]

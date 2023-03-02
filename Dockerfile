@@ -7,12 +7,11 @@ RUN apt-get update && \
     apt-get install -y python3-gdal libsqlite3-mod-spatialite python3-dev build-essential sqlite3 && \
     apt-get autoremove --purge -y
 RUN pip install --upgrade pip
-RUN mkdir /code
+RUN mkdir /app
 RUN mkdir /cache
-WORKDIR /code
-COPY requirements.txt /code/
+WORKDIR /app
+COPY requirements.txt /app/
 RUN	pip install -r requirements.txt
-COPY . /code/
+COPY . /app/
 RUN python manage.py collectstatic --no-input
-CMD ["bash", "/code/docker/entrypoint.sh"]
-#CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
+CMD ["bash", "/app/docker/entrypoint.sh"]
