@@ -108,6 +108,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_FINDERS = defaults.STATICFILES_FINDERS + ['compressor.finders.CompressorFinder']
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
+COMPRESS_OFFLINE = not DEBUGs
 
 CACHES = {
     'default': env.cache_url(default='dummycache://') 

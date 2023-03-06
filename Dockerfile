@@ -17,5 +17,6 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
 FROM base AS prod
 COPY . /app/
 RUN python manage.py collectstatic --no-input
+RUN python manage.py compress
 CMD ["bash", "/app/entrypoint.sh"]
 
