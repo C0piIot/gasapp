@@ -107,6 +107,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_FINDERS = defaults.STATICFILES_FINDERS + ['compressor.finders.CompressorFinder']
 
+STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'node_modules') ]
+
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter', 'compressor.filters.cssmin.CSSMinFilter']
 COMPRESS_OFFLINE = not DEBUG
 
