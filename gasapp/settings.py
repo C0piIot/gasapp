@@ -39,7 +39,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware '
+    "django.middleware.security.SecurityMiddleware",
 ]
 
 ROOT_URLCONF = 'gasapp.urls'
