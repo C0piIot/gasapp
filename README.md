@@ -4,4 +4,4 @@
 
 Spain gas stations price comparator
 
-https://⛽.dropdatabase.es
+https://gasapp.dropdatabase.es
