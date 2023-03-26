@@ -3,3 +3,4 @@ db.sqlite3
 db.sqlite3-journal
 /static/
 node_modules/
+/vendor/

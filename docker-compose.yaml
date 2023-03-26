@@ -2,6 +2,7 @@ version: '3'
 
 services:
   gas_app:
+    init: true
     container_name: gas_app
     ports:
       - "80:80"
