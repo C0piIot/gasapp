@@ -1,48 +1,46 @@
-# fly.toml file generated for gasapp on 2022-09-11T20:44:21+02:00
+# fly.toml app configuration file generated for gasapp on 2023-04-26T16:47:38Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "gasapp"
+primary_region = "mad"
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
+kill_timeout = "5s"
+
+[experimental]
+  auto_rollback = true
 
 [build]
   build-target = "prod"
 
 [env]
-  SWAP = "1"
+  ALLOWED_HOSTS = "gasapp.fly.dev,gasapp.dropdatabase.es"
   CACHE_URL = "filecache:////cache"
-  ALLOWED_HOSTS = "gasapp.fly.dev,gasapp.dropdatabase.es,xn--sbi.dropdatabase.es"
-  
-[experimental]
-  allowed_public_ports = []
-  auto_rollback = true
+  SWAP = "1"
 
+[[services]]
+  protocol = "tcp"
+  internal_port = 80
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "15s"
+    restart_limit = 0
 
 [[statics]]
   guest_path = "/app/static"
   url_prefix = "/static"
-
-[[services]]
-  internal_port = 80
-  protocol = "tcp"
-  script_checks = []
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
-
-  [[services.ports]]
-    force_https = false
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
-
-  [[services.tcp_checks]]
-    grace_period = "15s"
-    interval = "15s"
-    restart_limit = 0
-    timeout = "2s"
-
