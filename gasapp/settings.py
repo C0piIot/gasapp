@@ -105,4 +105,4 @@ CACHES = {
     'default': env.cache_url(default='dummycache://') 
 }
 
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = not DEBUG
