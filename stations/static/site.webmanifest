@@ -1,8 +1,8 @@
 {
     "id": "gasapp.dropdatabase.es",
     "scope": "https://gasapp.dropdatabase.es",
-    "name": "GasApp",
-    "short_name": "GasApp",
+    "name": "gasapp dropdatabase",
+    "short_name": "gasapp",
     "lang": "es-ES",
     "description": "Compara precios de las gasolineras más cercanas o en tu ruta. Precios actualizados cada día. Sin publicidad.",
     "icons": [
