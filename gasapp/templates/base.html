@@ -2,7 +2,7 @@
 <html lang="es">
     <head>{% block head_content %}
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
         <title>{% block title_content %}GasApp - Precio de gasolineras de tu zona{% endblock title_content %}</title>
         <meta name="description" content="Mapa con las estaciones de servicio de España. Localiza las gasolineras más baratas de tu zona.">
         <link rel="apple-touch-icon" sizes="180x180" href="{% static 'apple-touch-icon.png' %}">
@@ -15,7 +15,7 @@
         <meta name="msapplication-TileColor" content="#2d89ef">
         <meta name="theme-color" content="#ffffff">
         <meta name="theme-color" content="#a991d4">
-        <style>body { font-family: system-ui, sans-serif; }</style>
+        <style>body { font-family: system-ui, sans-serif; touch-action: manipulation; }</style>
     {% endblock head_content %}</head>
     <body>{% block body_content %}{% endblock body_content %}</body>
 </html>
