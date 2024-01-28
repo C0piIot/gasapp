@@ -3,3 +3,4 @@ django-environ
 django_compressor
 django-prometheus
 uwsgi
+sentry-sdk[django]

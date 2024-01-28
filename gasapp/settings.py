@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import os, environ
+import os, environ, sentry_sdk
 from django.conf import settings as defaults
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -28,7 +28,11 @@ DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost'])
 
-
+sentry_sdk.init(
+    dsn=env('SENTRY_DSN'),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+)
 # Application definition
 
 INSTALLED_APPS = [
@@ -74,7 +78,6 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/

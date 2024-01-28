@@ -18,6 +18,7 @@ kill_timeout = "5s"
   ALLOWED_HOSTS = "*"
   CACHE_URL = "filecache:////cache"
   SWAP = "1"
+  DEBUG = "False"
 
 [[services]]
   protocol = "tcp"

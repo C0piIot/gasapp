@@ -6,3 +6,4 @@ db.sqlite3-journal
 /static/
 node_modules/
 /vendor/
+docker-compose.override.yaml

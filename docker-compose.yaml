@@ -5,13 +5,13 @@ services:
     init: true
     container_name: gas_app
     ports:
-      - "80:80"
+      - "2080:80"
     environment:
       - "DEBUG=True"
       - "SECRET_KEY=xxxxxx"
       - "ALLOWED_HOSTS=*"
+      - "SENTRY_DSN=https://public@sentry.example.com/1"
     build: 
       context: .
-      target: base
     volumes:
       - .:/app
