@@ -7,6 +7,7 @@ app = "gasapp"
 primary_region = "mad"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
+swap_size_mb = 128
 
 [experimental]
   auto_rollback = true
@@ -17,7 +18,6 @@ kill_timeout = "5s"
 [env]
   ALLOWED_HOSTS = "*"
   CACHE_URL = "filecache:////cache"
-  SWAP = "1"
   DEBUG = "False"
 
 [[services]]
