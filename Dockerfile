@@ -14,6 +14,10 @@ COPY requirements.txt package.json yarn.lock /app/
 RUN	pip install -r requirements.txt
 RUN yarnpkg install
 CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=$BUILD_VERSION
+ARG GIT_REV=HEAD
+ENV GIT_REV=$GIT_REV
 
 FROM base AS prod
 ARG DEBUG False

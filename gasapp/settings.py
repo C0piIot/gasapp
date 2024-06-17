@@ -17,6 +17,9 @@ from django.conf import settings as defaults
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env = environ.Env()
 
+BUILD_VERSION = env.str("BUILD_VERSION", default="dev")
+GIT_REV = env.str("GIT_REV", default="HEAD")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
@@ -58,6 +61,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                "gasapp.context_processors.build_version"
             ],
         },
     },
