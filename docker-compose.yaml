@@ -4,7 +4,7 @@ services:
     init: true
     container_name: gas_app
     ports:
-      - "2080:80"
+      - "8080:80"
     environment:
       - "DEBUG=True"
       - "SECRET_KEY=xxxxxx"
