@@ -81,5 +81,14 @@
         "url": "https://play.google.com/store/apps/details?id=es.dropdatabase.gasapp.twa",
         "id": "es.dropdatabase.gasapp.twa"
       }
+    ],
+    "scope_extensions": [
+        { "origin": "gasapp.dropdatabase.es" }
+    ],
+    "protocol_handlers": [
+        {
+            "protocol": "web+gasapp",
+            "url": "/#%s"
+      }
     ]
 }
