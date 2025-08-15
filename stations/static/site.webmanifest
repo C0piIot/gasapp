@@ -86,9 +86,15 @@
         { "origin": "gasapp.dropdatabase.es" }
     ],
     "protocol_handlers": [
-        {
+      {
             "protocol": "web+gasapp",
             "url": "/#%s"
       }
-    ]
+    ],
+    "shortcuts": [
+      {
+            "name": "Mapa",
+            "url": "/",
+            "description": "Mapa de gasolineras"
+      }
 }
