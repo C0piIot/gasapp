@@ -1,4 +1,4 @@
-Django>=5.1
+Django>=6.1
 django-environ
 django_compressor
 django-prometheus
