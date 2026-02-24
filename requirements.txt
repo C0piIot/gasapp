@@ -1,0 +1,6 @@
+Django>=6.0
+django-environ
+django_compressor
+django-prometheus
+uwsgi
+sentry-sdk[django]

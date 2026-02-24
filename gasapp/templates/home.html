@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% load static compress %}
+{% block head_content %}
+{{ block.super }}
+{% compress css inline %}
+<style>
+    html, body { height: 100%; overscroll-behavior: none; }
+	body { padding:0; margin:0; display:flex; flex-direction: column; }
+    .hidden { display: none; }
+    #map { flex:1; }
+    h1 { 
+        margin:0; 
+        font-size: 1.6rem;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+    }
+    h1 a {  
+        text-decoration: none;
+        color: inherit;
+        margin-left: 1rem;
+    }
+    #station-info, #fuel-selector { padding: 1rem; }
+    #station-info p.prices>span { white-space: nowrap; margin-right: 12px; }
+    #fuel-selector p { margin-top: 1rem; text-align: center;}
+    .station {
+        padding: 0.2rem;
+        background: white;
+        font-size: 1rem;
+        border: 2px solid dimgray;
+        height: 2rem;
+        width: 2rem;
+        text-align: center;
+    }
+    .station div { 
+        background: dimgray; 
+        color: white;
+        font-size: 0.6rem;
+        font-weight: bold;
+        position: fixed;
+        bottom: -1px;
+        left: -1px;
+        right: -1px;
+    }
+    .station.cheap { border-color: green; }
+    .station.cheap div { background: green; }
+    .station.medium { border-color: orangered; }
+    .station.medium div { background: orangered; }
+    .station.expensive { border-color: darkred; }
+    .station.expensive div { background: darkred; }
+
+    #directions {
+        background-color: blue;
+        color: white;
+        text-decoration: none;
+        padding: 0.4rem 0.8rem;
+        font-style: normal;
+    }
+    address { text-align: right; }
+    address p { text-align: left; }
+    #updated {
+        font-size: 0.6rem;
+        font-style: normal;
+        margin-top: -0.6rem;
+    }
+</style>
+<link rel="stylesheet" href="{% static '/icons.css' %}">
+<link rel="stylesheet" href="{% static '/leaflet/dist/leaflet.css' %}">
+<link rel="stylesheet" href="{% static '/leaflet.locatecontrol/dist/L.Control.Locate.min.css' %}">
+{% endcompress %}
+{% endblock head_content %}
+{% block body_content %}
+<div id="map"></div>
+<div id="station-info" class="hidden">
+    <h1><span></span><a href="#" title="Compartir" class="hidden"><i class="fa fa-share"></i></a></h1>
+    <p class="prices">
+        <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
+        <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
+        <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
+        <span id="glp"><i class="fa fa-gas-station"></i> GLP <b></b></span>
+    </p>
+    <address>
+        <p></p>
+        <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
+    </address>
+    <p id="updated">Actualizado: <span></span></p>
+</div>
+<div id="fuel-selector" class="hidden">
+    <h1>Combustible preferido</h1>
+    <p>
+        <select>
+            <option value="petrol95">Sin plomo 95 - E5/E10</option>
+            <option value="petrol98">Sin plomo 98 - E10</option>
+            <option value="gasoil">Gasoil - B7</option>
+            <option value="glp">GLP</option>
+        </select>
+        <button type="button">Guardar</button>
+    </p>
+</div>
+<template id="icon">
+    <i class="fa fa-gas-station"></i>
+    <div>{price}</div>
+</template>
+{% compress js %}
+<script src="{% static '/leaflet/dist/leaflet.js' %}"></script>
+<script src="{% static '/leaflet.locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
+{% url 'stations' as stationsUrl %}
+<script>
+    let latestFetchUrl = '',
+        latestFetchTime = 0,
+        markers = {},
+        fuel = localStorage.getItem('fuel') || 'petrol95',
+        lat, lon, stationId;
+    [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
+    const qs = s =>  document.querySelector(s),
+        shareAnchor = qs('#station-info h1 a'),
+        stationsUrl = "{{ stationsUrl|escapejs }}",
+        iconTemplate = qs('#icon').innerHTML,
+        ios = /iPad|iPhone|iPod|Darwin/.test(navigator.platform) && !window.MSStream,
+        currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3},
+        FuelControl = L.Control.extend({
+            options: { position: 'topright' },
+            onAdd: (map) => {
+                var container = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
+                link = L.DomUtil.create('a', '', container);
+
+                link.href = '#';
+                link.title = 'Carburante preferido';
+                link.innerHTML = '<i class="fa fa-gas-station"></i>';
+
+                L.DomEvent.on(link, 'click', L.DomEvent.stop).on(link, 'click', () => {
+                    qs('#fuel-selector select').value = fuel;
+                    qs('#fuel-selector').classList.remove('hidden');
+                    qs('#station-info').classList.add('hidden');
+                });
+
+                return container;
+            }
+        });
+    async function updateStations(force) {
+        const params = new URLSearchParams(),
+            center = map.getBounds().getCenter();
+        
+        params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
+        const url = stationsUrl + '?' + params.toString(),
+            now = new Date();
+        if((url == latestFetchUrl) && (now.getTime() -  latestFetchTime) < 600000) { //no repetir petición solo por mover un poco
+            if(force !== true){
+                return;
+            }
+        }
+        latestFetchUrl = url;
+        latestFetchTime = now.getTime();
+
+        const response = await (await fetch(url)).json(),       
+            newMarkers = {};
+        let maxPrice = 0, minPrice = Number.MAX_VALUE;
+        response.stations.forEach((station) => {
+            const s = {};
+            [
+                s.pk,
+                s.name,
+                s.petrol95,
+                s.petrol98,
+                s.gasoil,
+                s.glp,
+                s.address,
+                s.city,
+                s.postal_code,
+                s.location,
+                s.updated
+            ] = station;
+            if(s[fuel]){
+                minPrice = Math.min(s[fuel], minPrice);
+                maxPrice = Math.max(s[fuel], maxPrice);
+            }
+
+            if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
+                newMarkers[s.pk] = markers[s.pk];
+                delete markers[s.pk];
+            } else {
+                const template = iconTemplate.replace('{price}', (s[fuel]|| '--').toLocaleString('es', currencyOptions)),
+                    showMarker = () => {
+                        qs('#station-info h1 span').textContent = s.name;
+                        const address = [ s.address, s.postal_code, s.city ],
+                            location = s.location.join();
+                        qs('#station-info address p').textContent = address.join(', ');
+                        ['petrol95', 'petrol98', 'gasoil', 'glp'].forEach((k) => {
+                            if(s[k]){
+                                qs('#' + k + ' b').textContent = s[k].toLocaleString('es', currencyOptions);
+                            }
+                            qs('#' + k).classList.toggle('hidden', !s[k]);
+                        });
+                        qs('#station-info').classList.remove('hidden');
+                        qs('#fuel-selector').classList.add('hidden');
+                        if(ios){
+                            qs('#directions').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
+                        } else {
+                            qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
+                       }
+                       qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
+                       shareAnchor.href = `/#${location},${s.pk}`;
+                       shareAnchor.title = `⛽ ${s.name}`;
+                    };
+                if(stationId == s.pk){
+                    showMarker();
+                }
+                newMarkers[s.pk] = L.marker(s.location.reverse(), { 
+                    title: s.name, 
+                    alt: s.name, 
+                    price: s[fuel]|| false,
+                    icon:  L.divIcon({
+                        html: template, 
+                        className: 'station station-' + s.pk,
+                        iconSize: [30, 30],
+                        iconAnchor: [30, 30]
+                    }) 
+                })
+                .addTo(map)
+                .on('click', showMarker);
+            }
+        });
+        for(k in markers){
+            map.removeLayer(markers[k]);
+        }
+        const firstThird = minPrice + ((maxPrice - minPrice) / 3),
+            secondThird = maxPrice - ((maxPrice - minPrice) / 3);
+        markers = newMarkers;
+        for(k in markers){
+            const price = markers[k].options.price,
+                icon = qs('.station-' + k);
+            if(price > secondThird){
+                icon.classList.remove('cheap', 'medium');
+                icon.classList.add('expensive');
+            } else if(price > firstThird){
+                icon.classList.remove('cheap', 'expensive');
+                icon.classList.add('medium');
+            } else if(price) {
+                icon.classList.remove('expensive', 'medium');
+                icon.classList.add('cheap');
+            }
+        }
+    };
+
+    const map = L.map('map', { 
+        preferCanvas: true,
+        zoomControl: false,
+        layers: [
+            L.tileLayer('https://atlas.microsoft.com/map/tile?subscription-key={subscriptionKey}&api-version=2.0&tilesetId={tilesetId}&zoom={z}&x={x}&y={y}&tileSize=256&language={language}&view={view}', {
+                attribution: `©<a target="_blank" href="https://tomtom.com" title="TomTom">👐</a> | <a target="_blank" href="https://microsoft.com" title="Microsoft">💻</a> | <a target="_blank" href="https://openstreetmap.org" title="OSM">🗺️</a>| <a target="_blank" href="https://leafletjs.com" title="Leaflet">🍃</a> | <a target="_blank" href="https://www.buymeacoffee.com/dropdatabase">☕</a> | Build <a target="_blank" href="https://github.com/C0piIot/gasapp">${document.body.dataset.build}</a>`,
+                subscriptionKey: 'kdsNtJnhq11QdGcl1Vze7pMe1tDWBVxb5kSr4aaGJkI',
+                tilesetId: 'microsoft.base.road',
+                language: 'es-ES',
+                view: 'Auto'
+            })
+        ]})
+        .setView([lat || 40.4168, lon || -3.7038], 14)
+        .addControl(L.control.locate({
+                position: 'topright',
+                locateOptions: {
+                    maxZoom: 16,
+                    enableHighAccuracy: true
+                }
+            }))
+        .addControl(L.control.zoom({position:'topright'}))
+        .addControl(new FuelControl())
+        .on('click', () => { qs('#station-info').classList.add('hidden'); qs('#fuel-selector').classList.add('hidden'); })
+        .on('moveend', updateStations);
+    if(!lat && !lon) {
+        map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
+    }
+    updateStations();
+
+    map.attributionControl.setPrefix(false);
+
+    qs('#fuel-selector button').addEventListener('click', () => {
+        fuel = qs('#fuel-selector select').value;
+        localStorage.setItem('fuel', fuel);
+        for(k in markers){
+            map.removeLayer(markers[k]);
+        }
+        markers = [];
+        qs('#fuel-selector').classList.add('hidden');
+        updateStations(true);
+    });
+
+    if ('share' in navigator) {
+        shareAnchor.classList.remove('hidden');
+        shareAnchor.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigator.share({ url: shareAnchor.href, text: shareAnchor.title });
+        });
+    }
+    
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/worker.js', { scope: '/' });
+    }
+</script>
+{% endcompress %}
+{% endblock body_content %}

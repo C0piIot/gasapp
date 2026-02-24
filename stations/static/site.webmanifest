@@ -1,0 +1,102 @@
+{
+    "id": "gasapp.dropdatabase.es",
+    "scope": "https://gasapp.dropdatabase.es",
+    "name": "⛽ GasApp",
+    "short_name": "GasApp",
+    "lang": "es-ES",
+    "description": "Compara precios de las gasolineras más cercanas o en tu ruta. Precios actualizados cada día. Sin publicidad.",
+    "icons": [
+        {
+            "src": "/static/icon-any-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src":"/static/icon-any-512.png",
+            "sizes":"512x512",
+            "type":"image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/static/icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src":"/static/icon-maskable-512.png",
+            "sizes":"512x512",
+            "type":"image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "theme_color": "#000000",
+    "background_color": "#ffffff",
+    "start_url": "https://gasapp.dropdatabase.es",
+    "display": "standalone",
+    "display_override": [
+      "window-controls-overlay",
+      "standalone",
+      "browser"
+    ],
+    "dir": "ltr",
+    "launch_handler": {
+        "client_mode": ["navigate-existing", "auto"]
+    },
+    "handle_links": "not-preferred",
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "orientation": "any",
+    "categories": ["travel", "business", "finance"],
+    "screenshots" : [
+        {
+            "src": "/static/android-overview.jpeg",
+            "sizes": "720x1440",
+            "type": "image/jpeg",
+            "platform": "narrow",
+            "label": "Descubre de un vistazo las gasolineras cercanas"
+        },
+        {
+            "src": "/static/android-detail.jpeg",
+            "sizes": "720x1440",
+            "type": "image/jpeg",
+            "platform": "narrow",
+            "label": "Compara precios y obtén la ruta en coche"
+        },
+        {
+            "src": "/static/android-selection.jpeg",
+            "sizes": "720x1440",
+            "type": "image/jpeg",
+            "platform": "narrow",
+            "label": "Selecciona el combustible de tu coche"
+        }
+    ],
+    "iarc_rating_id": "5c6a16b9-2dfc-4d24-a4d8-ce47dbca6746",
+    "prefer_related_applications": true,
+    "related_applications": [
+      {
+        "platform": "play",
+        "url": "https://play.google.com/store/apps/details?id=es.dropdatabase.gasapp.twa",
+        "id": "es.dropdatabase.gasapp.twa"
+      }
+    ],
+    "scope_extensions": [
+        { "origin": "gasapp.dropdatabase.es" },
+        { "origin": "⛽.dropdatabase.es" }
+    ],
+    "protocol_handlers": [
+      {
+            "protocol": "web+gasapp",
+            "url": "/#%s"
+      }
+    ],
+    "shortcuts": [
+      {
+            "name": "Mapa",
+            "url": "/",
+            "description": "Mapa de gasolineras"
+      }
+    ]
+}
