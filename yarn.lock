@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-leaflet.locatecontrol@^0.88.0:
-  version "0.88.0"
-  resolved "https://registry.yarnpkg.com/leaflet.locatecontrol/-/leaflet.locatecontrol-0.88.0.tgz#135867332ce32b1b3dd3ee479603cc03746d0827"
-  integrity sha512-9c+06VDCWyJIFWpVTS33RpcifXpNIRLQ5TJkK6bGUPoftEhA0cGGIAwV8iYBAhYPlr+aEsL2ZLMpQZBDSOUaTQ==
+leaflet.locatecontrol@^0.89.0:
+  version "0.89.0"
+  resolved "https://registry.yarnpkg.com/leaflet.locatecontrol/-/leaflet.locatecontrol-0.89.0.tgz#e6d9d055f0bca73dd6956c71bb28edde25f0e75e"
+  integrity sha512-BTf8V802jXhlX4BBHmDg46ja10pPjSOOQuqB9LK+EeEHJMn+Vb7VownvE67nCfTGB4kEexl1gYF8v9rJyAUv0w==
 
 leaflet@^1.9.4:
   version "1.9.4"
