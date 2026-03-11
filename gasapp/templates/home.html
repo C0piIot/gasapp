@@ -246,11 +246,8 @@
         preferCanvas: true,
         zoomControl: false,
         layers: [
-            L.tileLayer('https://atlas.microsoft.com/map/tile?subscription-key={subscriptionKey}&api-version=2.0&tilesetId={tilesetId}&zoom={z}&x={x}&y={y}&tileSize=256&language={language}&view={view}', {
-                attribution: `©<a target="_blank" href="https://tomtom.com" title="TomTom">👐</a> | <a target="_blank" href="https://microsoft.com" title="Microsoft">💻</a> | <a target="_blank" href="https://openstreetmap.org" title="OSM">🗺️</a>| <a target="_blank" href="https://leafletjs.com" title="Leaflet">🍃</a> | <a target="_blank" href="https://www.buymeacoffee.com/dropdatabase">☕</a> | Build <a target="_blank" href="https://github.com/C0piIot/gasapp">${document.body.dataset.build}</a>`,
-                subscriptionKey: 'kdsNtJnhq11QdGcl1Vze7pMe1tDWBVxb5kSr4aaGJkI',
-                tilesetId: 'microsoft.base.road',
-                language: 'es-ES',
+            L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+                attribution: `©<a target="_blank" href="https://tomtom.com" title="TomTom">👐</a> | <a target="_blank" href="https://www.hotosm.org/" title="Humanitarian OpenStreetMap Team">💻</a> | <a target="_blank" href="https://openstreetmap.org" title="OSM">🗺️</a>| <a target="_blank" href="https://leafletjs.com" title="Leaflet">🍃</a> | <a target="_blank" href="https://www.buymeacoffee.com/dropdatabase">☕</a> | Build <a target="_blank" href="https://github.com/C0piIot/gasapp">${document.body.dataset.build}</a>`,
                 view: 'Auto'
             })
         ]})
