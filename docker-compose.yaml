@@ -9,7 +9,6 @@ services:
       - "DEBUG=True"
       - "SECRET_KEY=xxxxxx"
       - "ALLOWED_HOSTS=*"
-      - "SENTRY_DSN=https://public@sentry.example.com/1"
     build: 
       context: .
     volumes:

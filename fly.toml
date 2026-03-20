@@ -46,7 +46,3 @@ swap_size_mb = 128
   guest_path = "/app/static"
   url_prefix = "/static"
 
-
-[metrics]
-port = 80
-path = "/metrics"

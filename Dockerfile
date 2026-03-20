@@ -21,7 +21,6 @@ ENV GIT_REV=$GIT_REV
 
 FROM base AS prod
 ARG DEBUG False
-ARG SENTRY_DSN=https://public@sentry.example.com/1
 COPY . /app/
 RUN python manage.py collectstatic --no-input
 RUN python manage.py compress

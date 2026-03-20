@@ -7,5 +7,4 @@ urlpatterns = [
     path('', cache_page(60 * 60 * 24)(TemplateView.as_view(template_name='home.html')), name='home'),
     path('stations/', cache_page(60 * 60 * 24)(StationsView.as_view()), name="stations"),
     path('offline/', cache_page(60 * 60 * 24)(TemplateView.as_view(template_name='offline.html')), name='offline'),
-    path('', include('django_prometheus.urls')),
 ]

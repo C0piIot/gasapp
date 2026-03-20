@@ -4,7 +4,6 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.gis.geos import Point
 from urllib import request
 from xml.etree import cElementTree as ET
-from django_prometheus.models import ExportModelOperationsMixin
 
 ns                  = '{http://schemas.datacontract.org/2004/07/ServiciosCarburantes}%s'
 STATION             = ns % 'EESSPrecio'
@@ -27,7 +26,7 @@ LONG                = ns % 'Longitud_x0020__x0028_WGS84_x0029_'
 LAT                 = ns % 'Latitud'
 
 
-class Station(ExportModelOperationsMixin('station'), models.Model):
+class Station(models.Model):
     PRICES_URL = 'https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/'
 
     name = models.CharField(max_length=200)

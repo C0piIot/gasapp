@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import os, environ, sentry_sdk
+import os, environ
 from django.conf import settings as defaults
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -31,25 +31,17 @@ DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost'])
 
-sentry_sdk.init(
-    dsn=env('SENTRY_DSN'),
-    traces_sample_rate=1.0,
-    profiles_sample_rate=1.0,
-)
 # Application definition
 
 INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'compressor',
-    'django_prometheus',
     'stations.apps.StationsConfig',
 ]
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
-    "django.middleware.security.SecurityMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "django.middleware.security.SecurityMiddleware"
 ]
 
 ROOT_URLCONF = 'gasapp.urls'
