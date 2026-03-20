@@ -7,3 +7,4 @@ db.sqlite3-journal
 node_modules/
 /vendor/
 docker-compose.override.yaml
+.yarn/install-state.gz
