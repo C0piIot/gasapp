@@ -1,0 +1,9 @@
+bind = "0.0.0.0:80"
+workers = 3
+timeout = 300
+max_requests = 500
+max_requests_jitter = 50
+worker_tmp_dir = "/dev/shm"
+accesslog = None
+errorlog = "-"
+loglevel = "warning"
