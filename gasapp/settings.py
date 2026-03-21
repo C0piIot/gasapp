@@ -107,6 +107,5 @@ CACHES = {
     'default': env.cache_url(default='dummycache://') 
 }
 
-SECURE_SSL_REDIRECT = not DEBUG
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = False
 
