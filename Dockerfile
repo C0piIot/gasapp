@@ -22,7 +22,7 @@ FROM base AS prod
 ARG DEBUG False
 COPY . /app/
 RUN yarnpkg install
-RUN pypy3 manage.py collectstatic --no-input
-RUN pypy3 manage.py compress
+RUN python manage.py collectstatic --no-input
+RUN python manage.py compress
 CMD ["bash", "/app/entrypoint.sh"]
 
