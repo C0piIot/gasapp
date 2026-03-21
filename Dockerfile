@@ -1,8 +1,10 @@
-FROM pypy:3-slim AS base
+FROM python:3-slim AS base
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get dist-upgrade -y && \
-    apt-get install -y --no-install-recommends gdal-bin libgdal-dev libgeos-c1v5 libsqlite3-mod-spatialite build-essential sqlite3 yarnpkg && \
+    apt-get install -y --no-install-recommends python3-gdal libsqlite3-mod-spatialite python3-dev build-essential sqlite3 yarnpkg && \
     apt-get autoremove --purge -y
 RUN pip install --upgrade pip
 RUN mkdir /app
@@ -10,7 +12,7 @@ RUN mkdir /cache
 WORKDIR /app
 COPY requirements.txt package.json yarn.lock /app/
 RUN	pip install -r requirements.txt
-CMD ["pypy3", "manage.py", "runserver", "0.0.0.0:80"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION
 ARG GIT_REV=HEAD

@@ -1,4 +1,4 @@
 Django>=5.2
 django-environ
 django_compressor
-gunicorn
+uwsgi
