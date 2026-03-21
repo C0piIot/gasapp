@@ -10,8 +10,6 @@ RUN mkdir /cache
 WORKDIR /app
 COPY requirements.txt package.json yarn.lock /app/
 RUN	pip install -r requirements.txt
-RUN yarnpkg install
-RUN ls && pwd && sleep 10
 CMD ["pypy3", "manage.py", "runserver", "0.0.0.0:80"]
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION
@@ -21,6 +19,7 @@ ENV GIT_REV=$GIT_REV
 FROM base AS prod
 ARG DEBUG False
 COPY . /app/
+RUN yarnpkg install
 RUN pypy3 manage.py collectstatic --no-input
 RUN pypy3 manage.py compress
 CMD ["bash", "/app/entrypoint.sh"]

@@ -11,5 +11,6 @@ services:
       - "ALLOWED_HOSTS=*"
     build: 
       context: .
+      target: base
     volumes:
       - .:/app
