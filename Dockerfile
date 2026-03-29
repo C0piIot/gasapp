@@ -1,28 +1,22 @@
-FROM python:3-slim AS base
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONDONTWRITEBYTECODE 1
-ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y --no-install-recommends python3-gdal libsqlite3-mod-spatialite python3-dev build-essential sqlite3 yarnpkg && \
-    apt-get autoremove --purge -y
-RUN pip install --upgrade pip
-RUN mkdir /app
-RUN mkdir /cache
+# ── build stage ──────────────────────────────────────────────────────────────
+FROM golang:1.22-alpine AS build
+WORKDIR /src
+COPY go.mod ./
+COPY internal/ internal/
+COPY cmd/      cmd/
+RUN go mod tidy
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server  ./cmd/server
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/update  ./cmd/update
+
+# ── runtime stage ─────────────────────────────────────────────────────────────
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
-COPY requirements.txt package.json yarn.lock /app/
-RUN	pip install -r requirements.txt
-CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
-ARG BUILD_VERSION=dev
-ENV BUILD_VERSION=$BUILD_VERSION
-ARG GIT_REV=HEAD
-ENV GIT_REV=$GIT_REV
 
-FROM base AS prod
-ARG DEBUG False
-COPY . /app/
-RUN yarnpkg install
-RUN python manage.py collectstatic --no-input
-RUN python manage.py compress
-CMD ["bash", "/app/entrypoint.sh"]
+COPY --from=build /out/server  ./server
+COPY --from=build /out/update  ./update
 
+# Static assets and templates are mounted at runtime (see docker-compose.yaml).
+# The update binary is invoked by cron / a sidecar; only the server runs here.
+EXPOSE 8080
+CMD ["./server", "-addr=:8080"]
