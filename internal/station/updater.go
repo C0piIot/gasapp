@@ -15,15 +15,14 @@ import (
 
 const pricesURL = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/"
 
-// httpClient mimics a plain wget request: HTTP/1.1 only, no HTTP/2.
-// The MINETUR API resets connections from Go's default HTTP/2 client.
-var httpClient = &http.Client{
-	Transport: &http.Transport{
-		TLSClientConfig:    &tls.Config{},
-		ForceAttemptHTTP2:  false,
-		DisableCompression: false,
-	},
-}
+// httpClient forces HTTP/1.1 by setting TLSNextProto to an empty map,
+// which is the correct way to disable HTTP/2 in Go's net/http.
+// The MINETUR API resets connections negotiated with HTTP/2.
+var httpClient = func() *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
+	return &http.Client{Transport: t}
+}()
 
 // UpdatePrices fetches the government XML feed and upserts all stations with prices.
 func UpdatePrices(db *sql.DB) error {
