@@ -6,19 +6,26 @@ import (
 	"flag"
 	"gasapp/internal/db"
 	"gasapp/internal/station"
+	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
+type templateData struct {
+	BuildVersion string
+}
+
 func main() {
 	dbPath := flag.String("db", "db.sqlite3", "path to SQLite database")
 	addr := flag.String("addr", ":8080", "listen address")
-	staticDir := flag.String("static", "static", "compiled static files directory (STATIC_ROOT)")
+	staticDir := flag.String("static", "static", "static files directory")
 	templatesDir := flag.String("templates", "gasapp/templates", "templates directory")
+	buildVersion := flag.String("build", "dev", "build version string")
 	flag.Parse()
 
 	database, err := db.Open(*dbPath)
@@ -27,25 +34,40 @@ func main() {
 	}
 	defer database.Close()
 
+	tmpl, err := template.ParseFiles(
+		filepath.Join(*templatesDir, "home.html"),
+		filepath.Join(*templatesDir, "offline.html"),
+	)
+	if err != nil {
+		log.Fatal("parse templates:", err)
+	}
+
+	data := templateData{BuildVersion: *buildVersion}
 	sc := &stationCache{db: database}
 
 	go runUpdates(database, sc)
 
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(*staticDir))))
+	mux.HandleFunc("/worker.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Service-Worker-Allowed", "/")
+		http.ServeFile(w, r, filepath.Join(*staticDir, "worker.js"))
+	})
 	mux.HandleFunc("/stations/", stationsHandler(sc))
 	mux.HandleFunc("/offline/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, *templatesDir+"/offline.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		tmpl.ExecuteTemplate(w, "offline.html", data)
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, *templatesDir+"/home.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		tmpl.ExecuteTemplate(w, "home.html", data)
 	})
 
 	log.Printf("listening on %s", *addr)
 	log.Fatal(http.ListenAndServe(*addr, mux))
 }
 
-// stationCache holds all recent stations in memory, refreshed every 24 hours.
+// stationCache holds all recent stations in memory, refreshed after each update.
 type stationCache struct {
 	mu       sync.RWMutex
 	db       *sql.DB

@@ -1,75 +1,86 @@
-{% extends 'base.html' %}
-{% load static compress %}
-{% block head_content %}
-{{ block.super }}
-{% compress css inline %}
-<style>
-    html, body { height: 100%; overscroll-behavior: none; }
-	body { padding:0; margin:0; display:flex; flex-direction: column; }
-    .hidden { display: none; }
-    #map { flex:1; }
-    h1 { 
-        margin:0; 
-        font-size: 1.6rem;
-        font-weight: bold;
-        display: flex;
-        justify-content: space-between;
-    }
-    h1 a {  
-        text-decoration: none;
-        color: inherit;
-        margin-left: 1rem;
-    }
-    #station-info, #fuel-selector { padding: 1rem; }
-    #station-info p.prices>span { white-space: nowrap; margin-right: 12px; }
-    #fuel-selector p { margin-top: 1rem; text-align: center;}
-    .station {
-        padding: 0.2rem;
-        background: white;
-        font-size: 1rem;
-        border: 2px solid dimgray;
-        height: 2rem;
-        width: 2rem;
-        text-align: center;
-    }
-    .station div { 
-        background: dimgray; 
-        color: white;
-        font-size: 0.6rem;
-        font-weight: bold;
-        position: fixed;
-        bottom: -1px;
-        left: -1px;
-        right: -1px;
-    }
-    .station.cheap { border-color: green; }
-    .station.cheap div { background: green; }
-    .station.medium { border-color: orangered; }
-    .station.medium div { background: orangered; }
-    .station.expensive { border-color: darkred; }
-    .station.expensive div { background: darkred; }
-
-    #directions {
-        background-color: blue;
-        color: white;
-        text-decoration: none;
-        padding: 0.4rem 0.8rem;
-        font-style: normal;
-    }
-    address { text-align: right; }
-    address p { text-align: left; }
-    #updated {
-        font-size: 0.6rem;
-        font-style: normal;
-        margin-top: -0.6rem;
-    }
-</style>
-<link rel="stylesheet" href="{% static '/icons.css' %}">
-<link rel="stylesheet" href="{% static '/leaflet/dist/leaflet.css' %}">
-<link rel="stylesheet" href="{% static '/leaflet.locatecontrol/dist/L.Control.Locate.min.css' %}">
-{% endcompress %}
-{% endblock head_content %}
-{% block body_content %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>GasApp - Precio de gasolineras de tu zona</title>
+    <meta name="description" content="Mapa con las estaciones de servicio de España. Localiza las gasolineras más baratas de tu zona.">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="apple-mobile-web-app-title" content="GasApp">
+    <meta name="application-name" content="GasApp">
+    <meta name="msapplication-TileColor" content="#2d89ef">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#a991d4">
+    <style>
+        body { font-family: system-ui, sans-serif; touch-action: manipulation; }
+        html, body { height: 100%; overscroll-behavior: none; }
+        body { padding:0; margin:0; display:flex; flex-direction: column; }
+        .hidden { display: none; }
+        #map { flex:1; }
+        h1 {
+            margin:0;
+            font-size: 1.6rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        h1 a {
+            text-decoration: none;
+            color: inherit;
+            margin-left: 1rem;
+        }
+        #station-info, #fuel-selector { padding: 1rem; }
+        #station-info p.prices>span { white-space: nowrap; margin-right: 12px; }
+        #fuel-selector p { margin-top: 1rem; text-align: center;}
+        .station {
+            padding: 0.2rem;
+            background: white;
+            font-size: 1rem;
+            border: 2px solid dimgray;
+            height: 2rem;
+            width: 2rem;
+            text-align: center;
+        }
+        .station div {
+            background: dimgray;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: bold;
+            position: fixed;
+            bottom: -1px;
+            left: -1px;
+            right: -1px;
+        }
+        .station.cheap { border-color: green; }
+        .station.cheap div { background: green; }
+        .station.medium { border-color: orangered; }
+        .station.medium div { background: orangered; }
+        .station.expensive { border-color: darkred; }
+        .station.expensive div { background: darkred; }
+        #directions {
+            background-color: blue;
+            color: white;
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            font-style: normal;
+        }
+        address { text-align: right; }
+        address p { text-align: left; }
+        #updated {
+            font-size: 0.6rem;
+            font-style: normal;
+            margin-top: -0.6rem;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.css">
+</head>
+<body data-build="{{.BuildVersion}}">
 <div id="map"></div>
 <div id="station-info" class="hidden">
     <h1><span></span><a href="#" title="Compartir" class="hidden"><i class="fa fa-share"></i></a></h1>
@@ -101,10 +112,8 @@
     <i class="fa fa-gas-station"></i>
     <div>{price}</div>
 </template>
-{% compress js %}
-<script src="{% static '/leaflet/dist/leaflet.js' %}"></script>
-<script src="{% static '/leaflet.locatecontrol/dist/L.Control.Locate.min.js' %}" charset="utf-8"></script>
-{% url 'stations' as stationsUrl %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js" charset="utf-8"></script>
 <script>
     let latestFetchUrl = '',
         latestFetchTime = 0,
@@ -114,7 +123,7 @@
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
     const qs = s =>  document.querySelector(s),
         shareAnchor = qs('#station-info h1 a'),
-        stationsUrl = "{{ stationsUrl|escapejs }}",
+        stationsUrl = "/stations/",
         iconTemplate = qs('#icon').innerHTML,
         ios = /iPad|iPhone|iPod|Darwin/.test(navigator.platform) && !window.MSStream,
         currencyOptions = { style: 'currency', currency: 'EUR', minimumFractionDigits: 3},
@@ -140,11 +149,11 @@
     async function updateStations(force) {
         const params = new URLSearchParams(),
             center = map.getBounds().getCenter();
-        
+
         params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
         const url = stationsUrl + '?' + params.toString(),
             now = new Date();
-        if((url == latestFetchUrl) && (now.getTime() -  latestFetchTime) < 600000) { //no repetir petición solo por mover un poco
+        if((url == latestFetchUrl) && (now.getTime() - latestFetchTime) < 600000) {
             if(force !== true){
                 return;
             }
@@ -152,7 +161,7 @@
         latestFetchUrl = url;
         latestFetchTime = now.getTime();
 
-        const response = await (await fetch(url)).json(),       
+        const response = await (await fetch(url)).json(),
             newMarkers = {};
         let maxPrice = 0, minPrice = Number.MAX_VALUE;
         response.stations.forEach((station) => {
@@ -175,7 +184,7 @@
                 maxPrice = Math.max(s[fuel], maxPrice);
             }
 
-            if(s.pk in markers){ //Ya lo teniamos, nos ahorramos crearlo otra vez
+            if(s.pk in markers){
                 newMarkers[s.pk] = markers[s.pk];
                 delete markers[s.pk];
             } else {
@@ -197,24 +206,24 @@
                             qs('#directions').href = `https://maps.apple.com/?daddr=${location}&dirflg=d`;
                         } else {
                             qs('#directions').href = `https://www.google.com/maps/dir/?api=1&destination=${location}&travelmode=driving&dir_action=navigate`;
-                       }
-                       qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {  });
-                       shareAnchor.href = `/#${location},${s.pk}`;
-                       shareAnchor.title = `⛽ ${s.name}`;
+                        }
+                        qs('#updated span').textContent = new Date(s.updated * 1000).toLocaleDateString('es', {});
+                        shareAnchor.href = `/#${location},${s.pk}`;
+                        shareAnchor.title = `⛽ ${s.name}`;
                     };
                 if(stationId == s.pk){
                     showMarker();
                 }
-                newMarkers[s.pk] = L.marker(s.location.reverse(), { 
-                    title: s.name, 
-                    alt: s.name, 
+                newMarkers[s.pk] = L.marker(s.location.reverse(), {
+                    title: s.name,
+                    alt: s.name,
                     price: s[fuel]|| false,
                     icon:  L.divIcon({
-                        html: template, 
+                        html: template,
                         className: 'station station-' + s.pk,
                         iconSize: [30, 30],
                         iconAnchor: [30, 30]
-                    }) 
+                    })
                 })
                 .addTo(map)
                 .on('click', showMarker);
@@ -242,7 +251,7 @@
         }
     };
 
-    const map = L.map('map', { 
+    const map = L.map('map', {
         preferCanvas: true,
         zoomControl: false,
         layers: [
@@ -264,7 +273,7 @@
         .on('click', () => { qs('#station-info').classList.add('hidden'); qs('#fuel-selector').classList.add('hidden'); })
         .on('moveend', updateStations);
     if(!lat && !lon) {
-        map.locate({setView: true, maxZoom: 13,  enableHighAccuracy: true, maximumAge: 10});
+        map.locate({setView: true, maxZoom: 13, enableHighAccuracy: true, maximumAge: 10});
     }
     updateStations();
 
@@ -288,10 +297,10 @@
             navigator.share({ url: shareAnchor.href, text: shareAnchor.title });
         });
     }
-    
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/worker.js', { scope: '/' });
     }
 </script>
-{% endcompress %}
-{% endblock body_content %}
+</body>
+</html>
