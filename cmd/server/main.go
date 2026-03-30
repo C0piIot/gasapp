@@ -136,8 +136,8 @@ func stationsHandler(sc *stationCache) http.HandlerFunc {
 		if center := r.URL.Query().Get("center"); center != "" {
 			parts := strings.SplitN(center, ",", 2)
 			if len(parts) == 2 {
-				lat, errLat := strconv.ParseFloat(parts[0], 64)
-				lng, errLng := strconv.ParseFloat(parts[1], 64)
+				lng, errLng := strconv.ParseFloat(parts[0], 64)
+				lat, errLat := strconv.ParseFloat(parts[1], 64)
 				if errLat == nil && errLng == nil {
 					result = station.ByDistance(stations, lat, lng, 200)
 				}

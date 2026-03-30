@@ -42,7 +42,7 @@ func TestStationsHandlerCenter(t *testing.T) {
 	insertStation(t, database, 3, 42.4, -3.7, 1.7)   // ~222 km north
 
 	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?center=40.4,-3.7")
+	w := doRequest(t, sc, "/stations/?center=-3.7,40.4")
 
 	rows := decodeStations(t, w)
 	if len(rows) != 3 {
