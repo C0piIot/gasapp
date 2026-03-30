@@ -1,48 +1,18 @@
-# fly.toml app configuration file generated for gasapp on 2023-04-26T16:47:38Z
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = "gasapp"
 primary_region = "cdg"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
-swap_size_mb = 128
-
-[experimental]
-  auto_rollback = true
 
 [build]
-  build-target = "prod"
 
-[env]
-  ALLOWED_HOSTS = "*"
-  CACHE_URL = "filecache:////cache"
-  DEBUG = "False"
+[[mounts]]
+  source = "gasapp_data"
+  destination = "/app/data"
 
-[[services]]
-  protocol = "tcp"
-  internal_port = 80
-
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 25
-    soft_limit = 20
-
-  [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "15s"
-    restart_limit = 0
+[http_service]
+  internal_port = 8080
+  force_https = true
 
 [[statics]]
   guest_path = "/app/static"
   url_prefix = "/static"
-
