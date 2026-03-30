@@ -16,6 +16,9 @@ import (
 	"time"
 )
 
+// buildVersion is set at build time via -ldflags "-X main.buildVersion=..."
+var buildVersion = "dev"
+
 type templateData struct {
 	BuildVersion string
 }
@@ -25,7 +28,6 @@ func main() {
 	addr := flag.String("addr", ":8080", "listen address")
 	staticDir := flag.String("static", "static", "static files directory")
 	templatesDir := flag.String("templates", "templates", "templates directory")
-	buildVersion := flag.String("build", "dev", "build version string")
 	flag.Parse()
 
 	database, err := db.Open(*dbPath)
@@ -42,7 +44,7 @@ func main() {
 		log.Fatal("parse templates:", err)
 	}
 
-	data := templateData{BuildVersion: *buildVersion}
+	data := templateData{BuildVersion: buildVersion}
 	sc := &stationCache{db: database}
 
 	go runUpdates(database, sc)

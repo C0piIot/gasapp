@@ -1,11 +1,12 @@
 # ── build stage ──────────────────────────────────────────────────────────────
 FROM golang:1.22-alpine AS build
+ARG BUILD_VERSION=dev
 WORKDIR /src
-COPY go.mod ./
+COPY go.mod go.sum ./
+RUN go mod download
 COPY internal/ internal/
 COPY cmd/      cmd/
-RUN go mod tidy
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server ./cmd/server
+RUN CGO_ENABLED=0 go build -ldflags="-s -w -X main.buildVersion=${BUILD_VERSION}" -o /out/server ./cmd/server
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 FROM alpine:3.19
