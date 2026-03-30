@@ -24,7 +24,7 @@ func main() {
 	dbPath := flag.String("db", "db.sqlite3", "path to SQLite database")
 	addr := flag.String("addr", ":8080", "listen address")
 	staticDir := flag.String("static", "static", "static files directory")
-	templatesDir := flag.String("templates", "gasapp/templates", "templates directory")
+	templatesDir := flag.String("templates", "templates", "templates directory")
 	buildVersion := flag.String("build", "dev", "build version string")
 	flag.Parse()
 

@@ -8,4 +8,4 @@ services:
       context: .
     volumes:
       - ./static:/app/static:ro
-      - ./gasapp/templates:/app/gasapp/templates:ro
+      - ./templates:/app/templates:ro

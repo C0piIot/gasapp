@@ -2,8 +2,5 @@ fly.toml
 .git/
 *.sqlite3
 builds/
-node_modules/
-/static/
-.yarn/install-state.gz
 docker-compose.override*
 Dockerfile

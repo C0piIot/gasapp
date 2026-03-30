@@ -13,7 +13,8 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 COPY --from=build /out/server ./server
+COPY templates/ templates/
+COPY static/    static/
 
-# Static assets and templates are mounted at runtime (see docker-compose.yaml).
 EXPOSE 8080
 CMD ["./server", "-addr=:8080"]
