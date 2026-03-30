@@ -9,25 +9,37 @@ import (
 
 // Upsert inserts or updates a station by its ID.
 func Upsert(db *sql.DB, s Station) error {
-	_, err := db.Exec(`
-		INSERT INTO stations
-			(id, name, updated, postal_code, address, opening_hours, town, city, state,
-			 gasoil, petrol95, petrol98, glp, lat, lng)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-		ON CONFLICT(id) DO UPDATE SET
-			name=excluded.name, updated=excluded.updated,
-			postal_code=excluded.postal_code, address=excluded.address,
-			opening_hours=excluded.opening_hours, town=excluded.town,
-			city=excluded.city, state=excluded.state,
-			gasoil=excluded.gasoil, petrol95=excluded.petrol95,
-			petrol98=excluded.petrol98, glp=excluded.glp,
-			lat=excluded.lat, lng=excluded.lng`,
+	_, err := db.Exec(upsertSQL,
 		s.ID, s.Name, s.Updated, s.PostalCode, s.Address, s.OpeningHours,
 		s.Town, s.City, s.State,
 		s.Gasoil, s.Petrol95, s.Petrol98, s.GLP, s.Lat, s.Lng,
 	)
 	return err
 }
+
+// upsertTx inserts or updates a station within an existing transaction.
+func upsertTx(tx *sql.Tx, s Station) error {
+	_, err := tx.Exec(upsertSQL,
+		s.ID, s.Name, s.Updated, s.PostalCode, s.Address, s.OpeningHours,
+		s.Town, s.City, s.State,
+		s.Gasoil, s.Petrol95, s.Petrol98, s.GLP, s.Lat, s.Lng,
+	)
+	return err
+}
+
+const upsertSQL = `
+	INSERT INTO stations
+		(id, name, updated, postal_code, address, opening_hours, town, city, state,
+		 gasoil, petrol95, petrol98, glp, lat, lng)
+	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+	ON CONFLICT(id) DO UPDATE SET
+		name=excluded.name, updated=excluded.updated,
+		postal_code=excluded.postal_code, address=excluded.address,
+		opening_hours=excluded.opening_hours, town=excluded.town,
+		city=excluded.city, state=excluded.state,
+		gasoil=excluded.gasoil, petrol95=excluded.petrol95,
+		petrol98=excluded.petrol98, glp=excluded.glp,
+		lat=excluded.lat, lng=excluded.lng`
 
 // All returns all stations updated within the last 7 days.
 func All(db *sql.DB) ([]Station, error) {

@@ -39,9 +39,15 @@ func UpdatePrices(db *sql.DB) error {
 	return parseErr
 }
 
-// parseStream iteratively parses the XML response, upserting one station at a time
-// to keep memory usage flat regardless of feed size.
+// parseStream iteratively parses the XML response, upserting all stations in a
+// single transaction so the DB transitions atomically from old to new data.
 func parseStream(db *sql.DB, r io.Reader) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck
+
 	dec := xml.NewDecoder(r)
 	var fields map[string]string
 	var inStation bool
@@ -70,7 +76,7 @@ func parseStream(db *sql.DB, r io.Reader) error {
 		case xml.EndElement:
 			if se.Name.Local == "EESSPrecio" && inStation {
 				if s, ok := buildStation(fields); ok {
-					if err := Upsert(db, s); err != nil {
+					if err := upsertTx(tx, s); err != nil {
 						return fmt.Errorf("upsert station %s: %w", fields["IDEESS"], err)
 					}
 				}
@@ -78,7 +84,7 @@ func parseStream(db *sql.DB, r io.Reader) error {
 			}
 		}
 	}
-	return nil
+	return tx.Commit()
 }
 
 func buildStation(f map[string]string) (Station, bool) {
