@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w -X main.buildVersion=${BUILD_VERSION}
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 FROM alpine:3.19
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata curl
 WORKDIR /app
 
 COPY --from=build /out/server ./server

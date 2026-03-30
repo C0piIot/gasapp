@@ -1,12 +1,11 @@
 package station
 
 import (
-	"crypto/tls"
 	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"io"
-	"net/http"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -15,31 +14,29 @@ import (
 
 const pricesURL = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/"
 
-// httpClient forces HTTP/1.1 by setting TLSNextProto to an empty map,
-// which is the correct way to disable HTTP/2 in Go's net/http.
-// The MINETUR API resets connections negotiated with HTTP/2.
-var httpClient = func() *http.Client {
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
-	return &http.Client{Transport: t}
-}()
-
 // UpdatePrices fetches the government XML feed and upserts all stations with prices.
+// curl is used instead of Go's HTTP client because the MINETUR server rejects
+// Go's TLS ClientHello fingerprint regardless of HTTP version or User-Agent.
 func UpdatePrices(db *sql.DB) error {
-	req, err := http.NewRequest(http.MethodGet, pricesURL, nil)
+	cmd := exec.Command("curl", "--http1.1", "--silent", "--fail",
+		"--header", "Accept: application/xml",
+		"--user-agent", "Mozilla/5.0",
+		pricesURL)
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Accept", "application/xml")
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
+	if err := cmd.Start(); err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
-	return parseStream(db, resp.Body)
+	parseErr := parseStream(db, stdout)
+
+	if waitErr := cmd.Wait(); waitErr != nil && parseErr == nil {
+		return waitErr
+	}
+	return parseErr
 }
 
 // parseStream iteratively parses the XML response, upserting one station at a time
