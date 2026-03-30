@@ -7,15 +7,5 @@ services:
     build:
       context: .
     volumes:
-      - gasapp_data:/app/data
       - ./static:/app/static:ro
       - ./gasapp/templates:/app/gasapp/templates:ro
-    command: >
-      ./server
-        -addr=:8080
-        -db=/app/data/db.sqlite3
-        -static=/app/static
-        -templates=/app/gasapp/templates
-
-volumes:
-  gasapp_data:

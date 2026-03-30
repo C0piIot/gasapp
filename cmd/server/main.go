@@ -29,6 +29,8 @@ func main() {
 
 	sc := &stationCache{db: database}
 
+	go runUpdates(database, sc)
+
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(*staticDir))))
 	mux.HandleFunc("/stations/", stationsHandler(sc))
@@ -49,6 +51,12 @@ type stationCache struct {
 	db       *sql.DB
 	stations []station.Station
 	expires  time.Time
+}
+
+func (sc *stationCache) invalidate() {
+	sc.mu.Lock()
+	sc.expires = time.Time{}
+	sc.mu.Unlock()
 }
 
 func (sc *stationCache) get() ([]station.Station, error) {
@@ -74,6 +82,21 @@ func (sc *stationCache) get() ([]station.Station, error) {
 	sc.stations = stations
 	sc.expires = time.Now().Add(24 * time.Hour)
 	return sc.stations, nil
+}
+
+// runUpdates fetches prices immediately on startup, then repeats every hour.
+// Mirrors the original entrypoint.sh while loop.
+func runUpdates(database *sql.DB, sc *stationCache) {
+	for {
+		log.Println("updating prices...")
+		if err := station.UpdatePrices(database); err != nil {
+			log.Println("update prices:", err)
+		} else {
+			log.Println("prices updated")
+			sc.invalidate()
+		}
+		time.Sleep(time.Hour)
+	}
 }
 
 func stationsHandler(sc *stationCache) http.HandlerFunc {
