@@ -1,6 +1,7 @@
 package station
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"encoding/xml"
 	"fmt"
@@ -14,6 +15,16 @@ import (
 
 const pricesURL = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/"
 
+// httpClient mimics a plain wget request: HTTP/1.1 only, no HTTP/2.
+// The MINETUR API resets connections from Go's default HTTP/2 client.
+var httpClient = &http.Client{
+	Transport: &http.Transport{
+		TLSClientConfig:    &tls.Config{},
+		ForceAttemptHTTP2:  false,
+		DisableCompression: false,
+	},
+}
+
 // UpdatePrices fetches the government XML feed and upserts all stations with prices.
 func UpdatePrices(db *sql.DB) error {
 	req, err := http.NewRequest(http.MethodGet, pricesURL, nil)
@@ -21,8 +32,9 @@ func UpdatePrices(db *sql.DB) error {
 		return err
 	}
 	req.Header.Set("Accept", "application/xml")
+	req.Header.Set("User-Agent", "Mozilla/5.0")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
