@@ -114,6 +114,7 @@
 </template>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-edgebuffer@1.0.1/src/leaflet.edgebuffer.js"></script>
 <script>
     let latestFetchUrl = '',
         latestFetchTime = 0,
@@ -257,7 +258,8 @@
         layers: [
             L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
                 attribution: `©<a target="_blank" href="https://tomtom.com" title="TomTom">👐</a> | <a target="_blank" href="https://www.hotosm.org/" title="Humanitarian OpenStreetMap Team">💻</a> | <a target="_blank" href="https://openstreetmap.org" title="OSM">🗺️</a>| <a target="_blank" href="https://leafletjs.com" title="Leaflet">🍃</a> | <a target="_blank" href="https://www.buymeacoffee.com/dropdatabase">☕</a> | Build <a target="_blank" href="https://github.com/C0piIot/gasapp">${document.body.dataset.build}</a>`,
-                view: 'Auto'
+                view: 'Auto',
+                edgeBufferTiles: 2
             })
         ]})
         .setView([lat || 40.4168, lon || -3.7038], 14)
