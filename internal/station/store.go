@@ -7,18 +7,27 @@ import (
 	"time"
 )
 
-// Upsert inserts or updates a station by its ID.
+// Upsert inserts or updates a station by its ID, recording any price changes
+// to price_history in the same transaction.
 func Upsert(db *sql.DB, s Station) error {
-	_, err := db.Exec(upsertSQL,
-		s.ID, s.Name, s.Updated, s.PostalCode, s.Address, s.OpeningHours,
-		s.Town, s.City, s.State,
-		s.Gasoil, s.Petrol95, s.Petrol98, s.GLP, s.Lat, s.Lng,
-	)
-	return err
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint:errcheck
+	if err := upsertTx(tx, s); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
-// upsertTx inserts or updates a station within an existing transaction.
+// upsertTx inserts or updates a station within an existing transaction,
+// appending a price_history row for each fuel whose price differs from the
+// stored value (including value->NULL transitions).
 func upsertTx(tx *sql.Tx, s Station) error {
+	if err := recordPriceHistory(tx, s); err != nil {
+		return err
+	}
 	_, err := tx.Exec(upsertSQL,
 		s.ID, s.Name, s.Updated, s.PostalCode, s.Address, s.OpeningHours,
 		s.Town, s.City, s.State,
@@ -40,6 +49,68 @@ const upsertSQL = `
 		gasoil=excluded.gasoil, petrol95=excluded.petrol95,
 		petrol98=excluded.petrol98, glp=excluded.glp,
 		lat=excluded.lat, lng=excluded.lng`
+
+// OR IGNORE so two updates landing in the same second on the same station+fuel
+// (Updated is set from time.Now().Unix() in buildStation) don't blow up.
+const historyInsertSQL = `INSERT OR IGNORE INTO price_history
+	(station_id, fuel, price, observed_at) VALUES (?, ?, ?, ?)`
+
+// priceChanged reports whether new should be recorded as a history row given
+// the previously stored old value, and what price to write (which may be nil
+// for a value->NULL transition).
+func priceChanged(old, new *float64) (record bool, write *float64) {
+	switch {
+	case old == nil && new == nil:
+		return false, nil
+	case old == nil:
+		return true, new
+	case new == nil:
+		return true, nil
+	case *old == *new:
+		return false, nil
+	default:
+		return true, new
+	}
+}
+
+// loadCurrentPrices returns the four price fields stored for a station, or all
+// nils if the station does not exist yet.
+func loadCurrentPrices(tx *sql.Tx, id int64) (gasoil, petrol95, petrol98, glp *float64, err error) {
+	err = tx.QueryRow(
+		`SELECT gasoil, petrol95, petrol98, glp FROM stations WHERE id = ?`, id,
+	).Scan(&gasoil, &petrol95, &petrol98, &glp)
+	if err == sql.ErrNoRows {
+		return nil, nil, nil, nil, nil
+	}
+	return
+}
+
+func recordPriceHistory(tx *sql.Tx, s Station) error {
+	oldGasoil, oldP95, oldP98, oldGLP, err := loadCurrentPrices(tx, s.ID)
+	if err != nil {
+		return err
+	}
+	pairs := []struct {
+		fuel string
+		old  *float64
+		new  *float64
+	}{
+		{"gasoil", oldGasoil, s.Gasoil},
+		{"petrol95", oldP95, s.Petrol95},
+		{"petrol98", oldP98, s.Petrol98},
+		{"glp", oldGLP, s.GLP},
+	}
+	for _, p := range pairs {
+		record, write := priceChanged(p.old, p.new)
+		if !record {
+			continue
+		}
+		if _, err := tx.Exec(historyInsertSQL, s.ID, p.fuel, write, s.Updated); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // All returns all stations updated within the last 7 days.
 func All(db *sql.DB) ([]Station, error) {
