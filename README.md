@@ -15,7 +15,7 @@ https://gasapp.dropdatabase.es
 
 ## Stack
 
-- **Go 1.22** — single binary, no external process manager
+- **Go 1.25** — single binary, no external process manager
 - **modernc.org/sqlite** — pure-Go SQLite driver, no CGO required
 - **Leaflet** + **leaflet.locatecontrol** — map and geolocation (loaded from CDN)
 
@@ -40,8 +40,18 @@ The server starts on `http://localhost:8080`. The database is created automatica
 ## Running tests
 
 ```bash
-docker run --rm -v $(pwd):/app -w /app golang:1.22-alpine go test ./...
+docker run --rm -v $(pwd):/app -w /app golang:1.25-alpine go test ./...
 ```
+
+## Git hooks
+
+A shared `pre-commit` hook lives in `.githooks/pre-commit` and runs the test suite (in Docker) before every commit. After cloning, enable it once with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+To bypass the hook for a specific commit (e.g. WIP), use `git commit --no-verify`.
 
 ## Deployment (Fly.io)
 

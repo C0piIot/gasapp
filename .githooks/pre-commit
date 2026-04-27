@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# Match the Go version declared in go.mod
+go_image="golang:1.25-alpine"
+
+echo "pre-commit: running 'go test ./...' inside ${go_image}"
+
+# Cache modules between runs to keep the hook fast.
+mod_cache_volume="gasapp-go-mod-cache"
+build_cache_volume="gasapp-go-build-cache"
+
+if ! docker run --rm \
+    -v "${repo_root}:/src" \
+    -v "${mod_cache_volume}:/go/pkg/mod" \
+    -v "${build_cache_volume}:/root/.cache/go-build" \
+    -w /src \
+    "${go_image}" \
+    go test ./...; then
+    echo
+    echo "pre-commit: tests failed — commit aborted."
+    echo "Bypass with: git commit --no-verify"
+    exit 1
+fi
