@@ -19,7 +19,7 @@ func Open(path string) (*sql.DB, error) {
 }
 
 func migrate(db *sql.DB) error {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS stations (
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS stations (
 		id            INTEGER PRIMARY KEY,
 		name          TEXT    NOT NULL,
 		updated       INTEGER NOT NULL,
@@ -35,6 +35,21 @@ func migrate(db *sql.DB) error {
 		glp           REAL,
 		lat           REAL    NOT NULL,
 		lng           REAL    NOT NULL
-	)`)
-	return err
+	)`); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS price_history (
+		station_id  INTEGER NOT NULL,
+		fuel        TEXT    NOT NULL,
+		price       REAL,
+		observed_at INTEGER NOT NULL,
+		PRIMARY KEY (station_id, fuel, observed_at)
+	)`); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS price_history_station_fuel_observed
+		ON price_history (station_id, fuel, observed_at DESC)`); err != nil {
+		return err
+	}
+	return nil
 }

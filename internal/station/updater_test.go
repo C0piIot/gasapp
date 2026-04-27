@@ -233,4 +233,23 @@ func TestParseStream(t *testing.T) {
 	if stations[0].Petrol95 == nil || *stations[0].Petrol95 != 1.659 {
 		t.Errorf("Petrol95 = %v, want 1.659", stations[0].Petrol95)
 	}
+
+	rows := priceHistory(t, database)
+	if len(rows) != 3 {
+		t.Fatalf("got %d history rows, want 3", len(rows))
+	}
+	want := map[string]float64{"gasoil": 1.559, "petrol95": 1.659, "petrol98": 1.799}
+	for _, r := range rows {
+		if r.StationID != 1001 {
+			t.Errorf("history station_id = %d, want 1001", r.StationID)
+		}
+		w, ok := want[r.Fuel]
+		if !ok {
+			t.Errorf("unexpected history fuel %q", r.Fuel)
+			continue
+		}
+		if r.Price == nil || *r.Price != w {
+			t.Errorf("history price for %s = %v, want %v", r.Fuel, r.Price, w)
+		}
+	}
 }
