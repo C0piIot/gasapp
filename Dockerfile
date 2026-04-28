@@ -17,5 +17,7 @@ COPY --from=build /out/server ./server
 COPY templates/ templates/
 COPY static/    static/
 
+RUN mkdir -p /data
+
 EXPOSE 8080
-CMD ["./server", "-addr=:8080"]
+CMD ["./server", "-addr=:8080", "-db=/data/db.sqlite3"]
