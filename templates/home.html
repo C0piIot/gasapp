@@ -82,7 +82,7 @@
             margin: 0.5rem 0;
         }
         #price-chart .axis { stroke: #ccc; stroke-width: 1; }
-        #price-chart .line { fill: none; stroke: dimgray; stroke-width: 2; }
+        #price-chart .line { fill: none; stroke: dimgray; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
         #price-chart text { font-size: 10px; fill: #555; }
     </style>
     <link rel="stylesheet" href="/static/icons.css">
@@ -194,26 +194,43 @@
             class: 'axis', x1: padL, y1: padT, x2: padL, y2: padT + innerH,
         }));
 
-        let d = '', penDown = false, prev = null, segmentLen = 0;
+        // Build connected runs of known points, then render each with a
+        // Catmull-Rom-to-Bezier smooth: the tangent at each point follows
+        // the slope between its neighbors, giving a soft curve that still
+        // passes through every datapoint (no wavy washboard on alternating
+        // values).
+        const runs = [];
+        let run = [];
         for (let i = 0; i < n; i++) {
             const p = history[i];
             if (p === null || p === undefined) {
-                if (penDown && segmentLen === 1) d += ` L ${prev.x + 4} ${prev.y}`;
-                penDown = false; prev = null; segmentLen = 0;
+                if (run.length) runs.push(run);
+                run = [];
                 continue;
             }
-            const x = xOf(i), y = yOf(p);
-            if (!penDown) {
-                d += `M ${x} ${y}`;
-                penDown = true;
-                segmentLen = 1;
-            } else {
-                d += ` L ${x} ${prev.y} L ${x} ${y}`;
-                segmentLen++;
-            }
-            prev = {x, y};
+            run.push({x: xOf(i), y: yOf(p)});
         }
-        if (penDown && segmentLen === 1) d += ` L ${prev.x + 4} ${prev.y}`;
+        if (run.length) runs.push(run);
+
+        let d = '';
+        for (const r of runs) {
+            if (r.length === 1) {
+                d += `M ${r[0].x - 2} ${r[0].y} L ${r[0].x + 2} ${r[0].y} `;
+                continue;
+            }
+            d += `M ${r[0].x} ${r[0].y} `;
+            for (let i = 0; i < r.length - 1; i++) {
+                const p0 = i > 0 ? r[i - 1] : r[i],
+                    p1 = r[i],
+                    p2 = r[i + 1],
+                    p3 = i + 2 < r.length ? r[i + 2] : r[i + 1],
+                    cp1x = p1.x + (p2.x - p0.x) / 6,
+                    cp1y = p1.y + (p2.y - p0.y) / 6,
+                    cp2x = p2.x - (p3.x - p1.x) / 6,
+                    cp2y = p2.y - (p3.y - p1.y) / 6;
+                d += `C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y} `;
+            }
+        }
         if (d) chart.appendChild(el('path', {class: 'line', d}));
 
         const fmt = v => v.toLocaleString('es', currencyOptions);
