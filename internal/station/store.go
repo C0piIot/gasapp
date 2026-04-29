@@ -142,13 +142,25 @@ func All(db *sql.DB) ([]Station, error) {
 
 // ByDistance returns the nearest limit stations to (lat, lng), sorted by distance.
 func ByDistance(stations []Station, lat, lng float64, limit int) []Station {
+	idx := ByDistanceIndices(stations, lat, lng, limit)
+	result := make([]Station, len(idx))
+	for i, j := range idx {
+		result[i] = stations[j]
+	}
+	return result
+}
+
+// ByDistanceIndices returns indices into stations for the nearest limit
+// stations to (lat, lng), sorted by distance. Useful when a parallel slice
+// (e.g. per-station history) needs the same ordering and limit applied.
+func ByDistanceIndices(stations []Station, lat, lng float64, limit int) []int {
 	type ranked struct {
-		s    Station
+		idx  int
 		dist float64
 	}
 	ranked_ := make([]ranked, len(stations))
 	for i, s := range stations {
-		ranked_[i] = ranked{s, haversine(lat, lng, s.Lat, s.Lng)}
+		ranked_[i] = ranked{i, haversine(lat, lng, s.Lat, s.Lng)}
 	}
 	sort.Slice(ranked_, func(i, j int) bool {
 		return ranked_[i].dist < ranked_[j].dist
@@ -156,11 +168,11 @@ func ByDistance(stations []Station, lat, lng float64, limit int) []Station {
 	if len(ranked_) > limit {
 		ranked_ = ranked_[:limit]
 	}
-	result := make([]Station, len(ranked_))
+	out := make([]int, len(ranked_))
 	for i, r := range ranked_ {
-		result[i] = r.s
+		out[i] = r.idx
 	}
-	return result
+	return out
 }
 
 func haversine(lat1, lng1, lat2, lng2 float64) float64 {
