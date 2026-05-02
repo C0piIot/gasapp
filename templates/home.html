@@ -122,6 +122,15 @@
         fuel = localStorage.getItem('fuel') || 'petrol95',
         lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
+    const savedView = (() => {
+        try {
+            const v = JSON.parse(localStorage.getItem('view'));
+            if (v && Number.isFinite(v.lat) && Number.isFinite(v.lon) && Number.isFinite(v.zoom)) {
+                return v;
+            }
+        } catch (e) {}
+        return null;
+    })();
     const qs = s =>  document.querySelector(s),
         shareAnchor = qs('#station-info h1 a'),
         stationsUrl = "/stations/",
@@ -262,7 +271,10 @@
                 edgeBufferTiles: 2
             })
         ]})
-        .setView([lat || 40.4168, lon || -3.7038], 14)
+        .setView(
+            [lat || (savedView && savedView.lat) || 40.4168, lon || (savedView && savedView.lon) || -3.7038],
+            (lat && lon) ? 14 : (savedView ? savedView.zoom : 14)
+        )
         .addControl(L.control.locate({
                 position: 'topright',
                 locateOptions: {
@@ -273,7 +285,11 @@
         .addControl(L.control.zoom({position:'topright'}))
         .addControl(new FuelControl())
         .on('click', () => { qs('#station-info').classList.add('hidden'); qs('#fuel-selector').classList.add('hidden'); })
-        .on('moveend', updateStations);
+        .on('moveend', () => {
+            const c = map.getCenter();
+            localStorage.setItem('view', JSON.stringify({lat: c.lat, lon: c.lng, zoom: map.getZoom()}));
+            updateStations();
+        });
     if(!lat && !lon) {
         map.locate({setView: true, maxZoom: 13, enableHighAccuracy: true, maximumAge: 10});
     }
