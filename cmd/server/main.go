@@ -133,7 +133,24 @@ func stationsHandler(sc *stationCache) http.HandlerFunc {
 		}
 
 		result := stations
-		if center := r.URL.Query().Get("center"); center != "" {
+		if r.URL.Query().Has("ids") {
+			raw := r.URL.Query().Get("ids")
+			parts := strings.Split(raw, ",")
+			byID := make(map[int64]station.Station, len(stations))
+			for _, s := range stations {
+				byID[s.ID] = s
+			}
+			result = make([]station.Station, 0, len(parts))
+			for _, p := range parts {
+				id, err := strconv.ParseInt(p, 10, 64)
+				if err != nil {
+					continue
+				}
+				if s, ok := byID[id]; ok {
+					result = append(result, s)
+				}
+			}
+		} else if center := r.URL.Query().Get("center"); center != "" {
 			parts := strings.SplitN(center, ",", 2)
 			if len(parts) == 2 {
 				lng, errLng := strconv.ParseFloat(parts[0], 64)
