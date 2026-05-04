@@ -139,6 +139,16 @@
     <i class="fa fa-gas-station"></i>
     <div>{price}</div>
 </template>
+<template id="favorite-row">
+    <li>
+        <button type="button" class="row">
+            <span class="name"></span>
+            <span class="city"></span>
+            <span class="price"></span>
+        </button>
+        <button type="button" class="remove" aria-label="Quitar">×</button>
+    </li>
+</template>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js" charset="utf-8"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-edgebuffer@1.0.1/src/leaflet.edgebuffer.js"></script>
@@ -292,41 +302,26 @@
             empty.classList.remove('hidden');
             return;
         }
+        const rowTemplate = qs('#favorite-row');
         validFavs.forEach((id) => {
             const s = byId.get(id),
-                li = document.createElement('li'),
-                row = document.createElement('button'),
-                name = document.createElement('span'),
-                city = document.createElement('span'),
-                price = document.createElement('span'),
-                remove = document.createElement('button');
+                li = rowTemplate.content.firstElementChild.cloneNode(true);
             li.dataset.id = id;
-            row.type = 'button';
-            row.className = 'row';
-            name.className = 'name';
-            name.textContent = s.name;
-            city.className = 'city';
-            city.textContent = [s.city, s.postal_code].filter(Boolean).join(', ');
-            price.className = 'price';
-            price.textContent = s[fuel] ? s[fuel].toLocaleString('es', currencyOptions) : '--';
-            row.append(name, city, price);
-            row.addEventListener('click', () => {
+            li.querySelector('.name').textContent = s.name;
+            li.querySelector('.city').textContent = [s.city, s.postal_code].filter(Boolean).join(', ');
+            li.querySelector('.price').textContent = s[fuel] ? s[fuel].toLocaleString('es', currencyOptions) : '--';
+            li.querySelector('.row').addEventListener('click', () => {
                 panel.classList.add('hidden');
                 map.setView(s.location, 15);
                 showStation(s);
             });
-            remove.type = 'button';
-            remove.className = 'remove';
-            remove.setAttribute('aria-label', 'Quitar');
-            remove.textContent = '×';
-            remove.addEventListener('click', (e) => {
+            li.querySelector('.remove').addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleFavorite(id);
                 li.remove();
                 if (loadFavorites().length === 0) empty.classList.remove('hidden');
                 if (currentStationId === id) updateFavoriteToggle(currentStationId);
             });
-            li.append(row, remove);
             list.appendChild(li);
         });
     }
