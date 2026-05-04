@@ -159,7 +159,6 @@
         fuel = localStorage.getItem('fuel') || 'petrol95',
         currentStationId = null,
         favoritesRequestId = 0,
-        favoritesPromise = null,
         lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
     const savedView = (() => {
@@ -187,31 +186,66 @@
     function toggleFavorite(pk) {
         pk = Number(pk);
         const favs = loadFavorites(),
-            idx = favs.indexOf(pk),
-            added = idx === -1;
-        if (added) favs.unshift(pk); else favs.splice(idx, 1);
+            idx = favs.indexOf(pk);
+        if (idx === -1) favs.unshift(pk); else favs.splice(idx, 1);
         saveFavorites(favs);
-        if (added) refreshFavorites();
+        renderFavorites();
+        if (currentStationId === pk) updateFavoriteToggle(pk);
     }
-    function refreshFavorites() {
-        const ids = loadFavorites();
-        const p = (async () => {
-            if (ids.length === 0) return new Map();
-            const url = stationsUrl + '?ids=' + ids.join(','),
-                response = await (await fetch(url)).json(),
-                byId = new Map();
-            response.stations.forEach((row) => {
-                const s = {};
-                [s.pk, s.name, s.petrol95, s.petrol98, s.gasoil, s.glp,
-                 s.address, s.city, s.postal_code, s.location, s.updated] = row;
-                s.location = [s.location[1], s.location[0]];
-                byId.set(s.pk, s);
+    async function renderFavorites() {
+        const myId = ++favoritesRequestId,
+            ids = loadFavorites(),
+            panel = qs('#favorites'),
+            list = panel.querySelector('ul'),
+            empty = panel.querySelector('.empty'),
+            loading = panel.querySelector('.loading');
+        if (ids.length === 0) {
+            list.replaceChildren();
+            loading.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+        if (list.children.length === 0) loading.classList.remove('hidden');
+        const url = stationsUrl + '?ids=' + ids.join(','),
+            response = await (await fetch(url)).json();
+        if (myId !== favoritesRequestId) return;
+        const byId = new Map();
+        response.stations.forEach((row) => {
+            const s = {};
+            [s.pk, s.name, s.petrol95, s.petrol98, s.gasoil, s.glp,
+             s.address, s.city, s.postal_code, s.location, s.updated] = row;
+            s.location = [s.location[1], s.location[0]];
+            byId.set(s.pk, s);
+        });
+        const validFavs = ids.filter(id => byId.has(id));
+        if (validFavs.length !== ids.length) saveFavorites(validFavs);
+        loading.classList.add('hidden');
+        if (validFavs.length === 0) {
+            list.replaceChildren();
+            empty.classList.remove('hidden');
+            return;
+        }
+        const tpl = qs('#favorite-row'),
+            rows = validFavs.map((id) => {
+                const s = byId.get(id),
+                    li = tpl.content.firstElementChild.cloneNode(true);
+                li.dataset.id = id;
+                li.querySelector('.name').textContent = s.name;
+                li.querySelector('.city').textContent = [s.city, s.postal_code].filter(Boolean).join(', ');
+                li.querySelector('.price').textContent = s[fuel] ? s[fuel].toLocaleString('es', currencyOptions) : '--';
+                li.querySelector('.row').addEventListener('click', () => {
+                    panel.classList.add('hidden');
+                    map.setView(s.location, 15);
+                    showStation(s);
+                });
+                li.querySelector('.remove').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(id);
+                });
+                return li;
             });
-            return byId;
-        })();
-        p.resolved = false;
-        p.then(() => { p.resolved = true; }, () => { p.resolved = true; });
-        favoritesPromise = p;
+        list.replaceChildren(...rows);
     }
     function updateFavoriteToggle(pk) {
         if (pk === null || pk === undefined) return;
@@ -274,56 +308,10 @@
         shareAnchor.title = `⛽ ${s.name}`;
         updateFavoriteToggle(s.pk);
     }
-    async function openFavorites() {
-        const myId = ++favoritesRequestId;
+    function openFavorites() {
         qs('#station-info').classList.add('hidden');
         qs('#fuel-selector').classList.add('hidden');
-        const panel = qs('#favorites'),
-            list = panel.querySelector('ul'),
-            empty = panel.querySelector('.empty'),
-            loading = panel.querySelector('.loading');
-        panel.classList.remove('hidden');
-        list.replaceChildren();
-        empty.classList.add('hidden');
-        loading.classList.add('hidden');
-        const favs = loadFavorites();
-        if (favs.length === 0) {
-            empty.classList.remove('hidden');
-            return;
-        }
-        if (!favoritesPromise) refreshFavorites();
-        if (!favoritesPromise.resolved) loading.classList.remove('hidden');
-        const byId = await favoritesPromise;
-        if (myId !== favoritesRequestId) return;
-        loading.classList.add('hidden');
-        const validFavs = favs.filter(id => byId.has(id));
-        if (validFavs.length !== favs.length) saveFavorites(validFavs);
-        if (validFavs.length === 0) {
-            empty.classList.remove('hidden');
-            return;
-        }
-        const rowTemplate = qs('#favorite-row');
-        validFavs.forEach((id) => {
-            const s = byId.get(id),
-                li = rowTemplate.content.firstElementChild.cloneNode(true);
-            li.dataset.id = id;
-            li.querySelector('.name').textContent = s.name;
-            li.querySelector('.city').textContent = [s.city, s.postal_code].filter(Boolean).join(', ');
-            li.querySelector('.price').textContent = s[fuel] ? s[fuel].toLocaleString('es', currencyOptions) : '--';
-            li.querySelector('.row').addEventListener('click', () => {
-                panel.classList.add('hidden');
-                map.setView(s.location, 15);
-                showStation(s);
-            });
-            li.querySelector('.remove').addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleFavorite(id);
-                li.remove();
-                if (loadFavorites().length === 0) empty.classList.remove('hidden');
-                if (currentStationId === id) updateFavoriteToggle(currentStationId);
-            });
-            list.appendChild(li);
-        });
+        qs('#favorites').classList.remove('hidden');
     }
     async function updateStations(force) {
         const params = new URLSearchParams(),
@@ -446,7 +434,7 @@
         map.locate({setView: true, maxZoom: 13, enableHighAccuracy: true, maximumAge: 10});
     }
     updateStations();
-    if (loadFavorites().length > 0) refreshFavorites();
+    renderFavorites();
 
     map.attributionControl.setPrefix(false);
 
@@ -459,12 +447,11 @@
         markers = [];
         qs('#fuel-selector').classList.add('hidden');
         updateStations(true);
+        renderFavorites();
     });
 
     qs('#favorite-toggle').addEventListener('click', () => {
-        if (currentStationId === null) return;
-        toggleFavorite(currentStationId);
-        updateFavoriteToggle(currentStationId);
+        if (currentStationId !== null) toggleFavorite(currentStationId);
     });
 
     qs('#favorites-close').addEventListener('click', () => {
