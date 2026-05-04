@@ -149,6 +149,7 @@
         fuel = localStorage.getItem('fuel') || 'petrol95',
         currentStationId = null,
         favoritesRequestId = 0,
+        favoritesPromise = null,
         lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
     const savedView = (() => {
@@ -176,9 +177,31 @@
     function toggleFavorite(pk) {
         pk = Number(pk);
         const favs = loadFavorites(),
-            idx = favs.indexOf(pk);
-        if (idx === -1) favs.unshift(pk); else favs.splice(idx, 1);
+            idx = favs.indexOf(pk),
+            added = idx === -1;
+        if (added) favs.unshift(pk); else favs.splice(idx, 1);
         saveFavorites(favs);
+        if (added) refreshFavorites();
+    }
+    function refreshFavorites() {
+        const ids = loadFavorites();
+        const p = (async () => {
+            if (ids.length === 0) return new Map();
+            const url = stationsUrl + '?ids=' + ids.join(','),
+                response = await (await fetch(url)).json(),
+                byId = new Map();
+            response.stations.forEach((row) => {
+                const s = {};
+                [s.pk, s.name, s.petrol95, s.petrol98, s.gasoil, s.glp,
+                 s.address, s.city, s.postal_code, s.location, s.updated] = row;
+                s.location = [s.location[1], s.location[0]];
+                byId.set(s.pk, s);
+            });
+            return byId;
+        })();
+        p.resolved = false;
+        p.then(() => { p.resolved = true; }, () => { p.resolved = true; });
+        favoritesPromise = p;
     }
     function updateFavoriteToggle(pk) {
         if (pk === null || pk === undefined) return;
@@ -258,27 +281,19 @@
             empty.classList.remove('hidden');
             return;
         }
-        loading.classList.remove('hidden');
-        const url = stationsUrl + '?ids=' + favs.join(',') + '&fuel=' + fuel,
-            response = await (await fetch(url)).json();
+        if (!favoritesPromise) refreshFavorites();
+        if (!favoritesPromise.resolved) loading.classList.remove('hidden');
+        const byId = await favoritesPromise;
         if (myId !== favoritesRequestId) return;
         loading.classList.add('hidden');
-        const byId = {};
-        response.stations.forEach((row) => {
-            const s = {};
-            [s.pk, s.name, s.petrol95, s.petrol98, s.gasoil, s.glp,
-             s.address, s.city, s.postal_code, s.location, s.updated] = row;
-            s.location = [s.location[1], s.location[0]];
-            byId[s.pk] = s;
-        });
-        const validFavs = favs.filter(id => id in byId);
+        const validFavs = favs.filter(id => byId.has(id));
         if (validFavs.length !== favs.length) saveFavorites(validFavs);
         if (validFavs.length === 0) {
             empty.classList.remove('hidden');
             return;
         }
         validFavs.forEach((id) => {
-            const s = byId[id],
+            const s = byId.get(id),
                 li = document.createElement('li'),
                 row = document.createElement('button'),
                 name = document.createElement('span'),
@@ -436,6 +451,7 @@
         map.locate({setView: true, maxZoom: 13, enableHighAccuracy: true, maximumAge: 10});
     }
     updateStations();
+    if (loadFavorites().length > 0) refreshFavorites();
 
     map.attributionControl.setPrefix(false);
 
