@@ -36,7 +36,7 @@
         #station-info, #fuel-selector, #favorites { padding: 1rem; }
         #station-info p.prices>span { white-space: nowrap; margin-right: 12px; }
         #fuel-selector p { margin-top: 1rem; text-align: center;}
-        #favorite-toggle, #favorites-close {
+        #favorite-toggle {
             background: none; border: none; cursor: pointer;
             font-size: 1.4rem; line-height: 1;
             padding: 0; margin-left: 1rem; color: inherit;
@@ -118,7 +118,7 @@
     <p id="updated">Actualizado: <span></span></p>
 </div>
 <div id="favorites" class="hidden">
-    <h1>Favoritos<button type="button" id="favorites-close" aria-label="Cerrar">×</button></h1>
+    <h1>Favoritos</h1>
     <p class="loading hidden">Cargando…</p>
     <p class="empty hidden">Aún no tienes favoritos. Toca la estrella en una estación para añadirla.</p>
     <ul></ul>
@@ -158,7 +158,6 @@
         markers = {},
         fuel = localStorage.getItem('fuel') || 'petrol95',
         currentStationId = null,
-        favoritesRequestId = 0,
         lat, lon, stationId;
     [lat, lon, stationId] = location.hash.replace('#','').split(',', 3);
     const savedView = (() => {
@@ -193,8 +192,7 @@
         if (currentStationId === pk) updateFavoriteToggle(pk);
     }
     async function renderFavorites() {
-        const myId = ++favoritesRequestId,
-            ids = loadFavorites(),
+        const ids = loadFavorites(),
             panel = qs('#favorites'),
             list = panel.querySelector('ul'),
             empty = panel.querySelector('.empty'),
@@ -209,7 +207,6 @@
         if (list.children.length === 0) loading.classList.remove('hidden');
         const url = stationsUrl + '?ids=' + ids.join(','),
             response = await (await fetch(url)).json();
-        if (myId !== favoritesRequestId) return;
         const byId = new Map();
         response.stations.forEach((row) => {
             const s = {};
@@ -452,10 +449,6 @@
 
     qs('#favorite-toggle').addEventListener('click', () => {
         if (currentStationId !== null) toggleFavorite(currentStationId);
-    });
-
-    qs('#favorites-close').addEventListener('click', () => {
-        qs('#favorites').classList.add('hidden');
     });
 
     if ('share' in navigator) {
