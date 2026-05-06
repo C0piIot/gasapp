@@ -104,7 +104,14 @@
 <body data-build="{{.BuildVersion}}">
 <div id="map"></div>
 <div id="station-info" class="hidden">
-    <h1><span></span><button type="button" id="favorite-toggle" title="Favorito" aria-label="Favorito">☆</button><a href="#" title="Compartir" class="hidden"><i class="fa fa-share"></i></a></h1>
+    <h1>
+        <div>
+            <button type="button" id="favorite-toggle" title="Favorito" aria-label="Favorito">☆</button>
+            <span></span>
+        </div>
+        <a href="#" title="Compartir" class="hidden">
+        <i class="fa fa-share"></i></a>
+    </h1>
     <p class="prices">
         <span id="petrol95"><i class="fa fa-gas-station"></i> 95 <b></b></span>
         <span id="petrol98"><i class="fa fa-gas-station"></i> 98 <b></b></span>
@@ -399,7 +406,7 @@
         zoomControl: false,
         layers: [
             L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-                attribution: `©<a target="_blank" href="https://tomtom.com" title="TomTom">👐</a> | <a target="_blank" href="https://www.hotosm.org/" title="Humanitarian OpenStreetMap Team">💻</a> | <a target="_blank" href="https://openstreetmap.org" title="OSM">🗺️</a>| <a target="_blank" href="https://leafletjs.com" title="Leaflet">🍃</a> | <a target="_blank" href="https://www.buymeacoffee.com/dropdatabase">☕</a> | Build <a target="_blank" href="https://github.com/C0piIot/gasapp">${document.body.dataset.build}</a>`,
+                attribution: `<a target="_blank" href="https://www.hotosm.org/" title="Humanitarian OpenStreetMap Team">💻</a> | <a target="_blank" href="https://openstreetmap.org" title="OSM">🗺️</a>| <a target="_blank" href="https://leafletjs.com" title="Leaflet">🍃</a> | <a target="_blank" href="https://www.buymeacoffee.com/dropdatabase">☕</a> | Build <a target="_blank" href="https://github.com/C0piIot/gasapp">${document.body.dataset.build}</a>`,
                 view: 'Auto',
                 edgeBufferTiles: 2
             })
