@@ -96,6 +96,26 @@
             font-style: normal;
             margin-top: -0.6rem;
         }
+        #price-chart {
+            margin: 0.5rem 0;
+            color: #555;
+            font-size: 0.8rem;
+        }
+        #price-chart .spark {
+            display: block;
+            font-family: monospace;
+            font-size: 1.2rem;
+            line-height: 1;
+            color: dimgray;
+            letter-spacing: 1px;
+            word-break: break-all;
+        }
+        #price-chart .range {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            margin-top: 0.1rem;
+        }
     </style>
     <link rel="stylesheet" href="/static/icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -118,6 +138,10 @@
         <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
         <span id="glp"><i class="fa fa-gas-station"></i> GLP <b></b></span>
     </p>
+    <div id="price-chart" class="hidden">
+        <span class="spark"></span>
+        <span class="range"><span class="from"></span><span class="to"></span></span>
+    </div>
     <address>
         <p></p>
         <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
@@ -163,6 +187,7 @@
     let latestFetchUrl = '',
         latestFetchTime = 0,
         markers = {},
+        historyEnd = 0,
         fuel = localStorage.getItem('fuel') || 'petrol95',
         currentStationId = null,
         lat, lon, stationId;
@@ -288,6 +313,39 @@
                 return container;
             }
         });
+    const SPARK_TICKS = '▁▂▃▄▅▆▇█';
+    function renderChart(history, endTs) {
+        const chart = qs('#price-chart');
+        if (!Array.isArray(history) || !history.some(v => v !== null && v !== undefined)) {
+            chart.classList.add('hidden');
+            return;
+        }
+        const known = history.filter(p => p !== null && p !== undefined);
+        let lo = Math.min(...known), hi = Math.max(...known);
+        const span = hi - lo;
+
+        // Map each known day to one of 8 block glyphs; unknown days become a
+        // gap so a missing stretch reads as a hole, not a flat low.
+        const spark = history.map(p => {
+            if (p === null || p === undefined) return ' ';
+            const t = span === 0 ? SPARK_TICKS.length - 1
+                : Math.round(((p - lo) / span) * (SPARK_TICKS.length - 1));
+            return SPARK_TICKS[t];
+        }).join('');
+
+        const fmt = v => v.toLocaleString('es', currencyOptions);
+        qs('#price-chart .spark').textContent = spark;
+        qs('#price-chart .from').textContent = `${fmt(lo)} – ${fmt(hi)}`;
+
+        const dayMs = 86400 * 1000,
+            endDate = new Date(endTs * 1000),
+            startDate = new Date(endDate.getTime() - history.length * dayMs),
+            dateFmt = d => d.toLocaleDateString('es', {day: '2-digit', month: '2-digit'});
+        qs('#price-chart .to').textContent =
+            `${dateFmt(startDate)} – ${dateFmt(new Date(endDate.getTime() - dayMs))}`;
+
+        chart.classList.remove('hidden');
+    }
     function showStation(s) {
         currentStationId = s.pk;
         qs('#station-info h1 span').textContent = s.name;
@@ -311,6 +369,7 @@
         shareAnchor.href = `/#${location},${s.pk}`;
         shareAnchor.title = `⛽ ${s.name}`;
         updateFavoriteToggle(s.pk);
+        renderChart(s.history, historyEnd);
     }
     function openFavorites() {
         qs('#station-info').classList.add('hidden');
@@ -322,6 +381,7 @@
             center = map.getBounds().getCenter();
 
         params.append('center', [center.lng.toFixed(2), center.lat.toFixed(2)].join());
+        params.append('fuel', fuel);
         const url = stationsUrl + '?' + params.toString(),
             now = new Date();
         if((url == latestFetchUrl) && (now.getTime() - latestFetchTime) < 600000) {
@@ -334,6 +394,7 @@
 
         const response = await (await fetch(url)).json(),
             newMarkers = {};
+        historyEnd = response.history_end || 0;
         let maxPrice = 0, minPrice = Number.MAX_VALUE;
         response.stations.forEach((station) => {
             const s = {};
@@ -348,7 +409,8 @@
                 s.city,
                 s.postal_code,
                 s.location,
-                s.updated
+                s.updated,
+                s.history
             ] = station;
             s.location = [s.location[1], s.location[0]];
             if(s[fuel]){
