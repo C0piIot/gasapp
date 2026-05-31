@@ -108,7 +108,8 @@
             line-height: 1;
             color: dimgray;
             letter-spacing: 1px;
-            word-break: break-all;
+            white-space: nowrap;
+            overflow-x: auto;
         }
         #price-chart .range {
             display: flex;
@@ -334,7 +335,8 @@
         }).join('');
 
         const fmt = v => v.toLocaleString('es', currencyOptions);
-        qs('#price-chart .spark').textContent = spark;
+        const sparkEl = qs('#price-chart .spark');
+        sparkEl.textContent = spark;
         qs('#price-chart .from').textContent = `${fmt(lo)} – ${fmt(hi)}`;
 
         const dayMs = 86400 * 1000,
@@ -345,6 +347,8 @@
             `${dateFmt(startDate)} – ${dateFmt(new Date(endDate.getTime() - dayMs))}`;
 
         chart.classList.remove('hidden');
+        // Default to the right edge so the most recent days are shown first.
+        sparkEl.scrollLeft = sparkEl.scrollWidth;
     }
     function showStation(s) {
         currentStationId = s.pk;
