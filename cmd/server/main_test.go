@@ -37,9 +37,9 @@ func TestStationsHandlerContentType(t *testing.T) {
 
 func TestStationsHandlerCenter(t *testing.T) {
 	database := newTestDB(t)
-	insertStation(t, database, 1, 40.4, -3.7, 1.5)   // at center
-	insertStation(t, database, 2, 41.4, -3.7, 1.6)   // ~111 km north
-	insertStation(t, database, 3, 42.4, -3.7, 1.7)   // ~222 km north
+	insertStation(t, database, 1, 40.4, -3.7, 1.5) // at center
+	insertStation(t, database, 2, 41.4, -3.7, 1.6) // ~111 km north
+	insertStation(t, database, 3, 42.4, -3.7, 1.7) // ~222 km north
 
 	sc := &stationCache{db: database}
 	w := doRequest(t, sc, "/stations/?center=-3.7,40.4")

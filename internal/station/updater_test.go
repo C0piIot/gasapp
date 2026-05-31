@@ -63,15 +63,15 @@ func TestFirstNonEmpty(t *testing.T) {
 // baseFields returns a minimal valid field map with no prices set.
 func baseFields() map[string]string {
 	return map[string]string{
-		"IDEESS":    "1234",
-		"Rótulo":    "REPSOL",
-		"C.P.":      "28001",
-		"Dirección": "CALLE MAYOR 1",
-		"Horario":   "L-D: 24H",
-		"Localidad": "MADRID",
-		"Municipio": "MADRID",
-		"Provincia": "MADRID",
-		"Latitud":   "40,4168",
+		"IDEESS":                             "1234",
+		"Rótulo":                             "REPSOL",
+		"C.P.":                               "28001",
+		"Dirección":                          "CALLE MAYOR 1",
+		"Horario":                            "L-D: 24H",
+		"Localidad":                          "MADRID",
+		"Municipio":                          "MADRID",
+		"Provincia":                          "MADRID",
+		"Latitud":                            "40,4168",
 		"Longitud_x0020__x0028_WGS84_x0029_": "-3,7038",
 	}
 }
