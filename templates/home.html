@@ -97,14 +97,25 @@
             margin-top: -0.6rem;
         }
         #price-chart {
-            width: 100%;
-            height: 120px;
-            display: block;
             margin: 0.5rem 0;
+            color: #555;
+            font-size: 0.8rem;
         }
-        #price-chart .axis { stroke: #ccc; stroke-width: 1; }
-        #price-chart .line { fill: none; stroke: dimgray; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-        #price-chart text { font-size: 10px; fill: #555; }
+        #price-chart .spark {
+            display: block;
+            font-family: monospace;
+            font-size: 1.2rem;
+            line-height: 1;
+            color: dimgray;
+            letter-spacing: 1px;
+            word-break: break-all;
+        }
+        #price-chart .range {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            margin-top: 0.1rem;
+        }
     </style>
     <link rel="stylesheet" href="/static/icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -127,7 +138,10 @@
         <span id="gasoil"><i class="fa fa-gas-station"></i> Gasoil <b></b></span>
         <span id="glp"><i class="fa fa-gas-station"></i> GLP <b></b></span>
     </p>
-    <svg id="price-chart" class="hidden" viewBox="0 0 320 120" preserveAspectRatio="none"></svg>
+    <div id="price-chart" class="hidden">
+        <span class="spark"></span>
+        <span class="range"><span class="from"></span><span class="to"></span></span>
+    </div>
     <address>
         <p></p>
         <a href="#" target="_blank" id="directions"><i class="fa fa-navigation"></i> Get directions</a>
@@ -299,91 +313,36 @@
                 return container;
             }
         });
+    const SPARK_TICKS = '▁▂▃▄▅▆▇█';
     function renderChart(history, endTs) {
         const chart = qs('#price-chart');
-        chart.replaceChildren();
         if (!Array.isArray(history) || !history.some(v => v !== null && v !== undefined)) {
             chart.classList.add('hidden');
             return;
         }
-        const W = 320, H = 120, padL = 28, padR = 6, padT = 8, padB = 18,
-            innerW = W - padL - padR, innerH = H - padT - padB,
-            n = history.length;
+        const known = history.filter(p => p !== null && p !== undefined);
+        let lo = Math.min(...known), hi = Math.max(...known);
+        const span = hi - lo;
 
-        const known = history.map((p, i) => ({i, p})).filter(({p}) => p !== null && p !== undefined);
-        let lo = Math.min(...known.map(({p}) => p)),
-            hi = Math.max(...known.map(({p}) => p));
-        if (lo === hi) { lo -= 0.01; hi += 0.01; }
-        const pad = (hi - lo) * 0.05;
-        lo -= pad; hi += pad;
-
-        const xOf = i => padL + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW),
-            yOf = p => padT + innerH - ((p - lo) / (hi - lo)) * innerH;
-
-        const SVG_NS = 'http://www.w3.org/2000/svg';
-        const el = (name, attrs, text) => {
-            const e = document.createElementNS(SVG_NS, name);
-            for (const k in attrs) e.setAttribute(k, attrs[k]);
-            if (text !== undefined) e.textContent = text;
-            return e;
-        };
-
-        chart.appendChild(el('line', {
-            class: 'axis', x1: padL, y1: padT + innerH, x2: padL + innerW, y2: padT + innerH,
-        }));
-        chart.appendChild(el('line', {
-            class: 'axis', x1: padL, y1: padT, x2: padL, y2: padT + innerH,
-        }));
-
-        // Build connected runs of known points, then render each with a
-        // Catmull-Rom-to-Bezier smooth: the tangent at each point follows
-        // the slope between its neighbors, giving a soft curve that still
-        // passes through every datapoint (no wavy washboard on alternating
-        // values).
-        const runs = [];
-        let run = [];
-        for (let i = 0; i < n; i++) {
-            const p = history[i];
-            if (p === null || p === undefined) {
-                if (run.length) runs.push(run);
-                run = [];
-                continue;
-            }
-            run.push({x: xOf(i), y: yOf(p)});
-        }
-        if (run.length) runs.push(run);
-
-        let d = '';
-        for (const r of runs) {
-            if (r.length === 1) {
-                d += `M ${r[0].x - 2} ${r[0].y} L ${r[0].x + 2} ${r[0].y} `;
-                continue;
-            }
-            d += `M ${r[0].x} ${r[0].y} `;
-            for (let i = 0; i < r.length - 1; i++) {
-                const p0 = i > 0 ? r[i - 1] : r[i],
-                    p1 = r[i],
-                    p2 = r[i + 1],
-                    p3 = i + 2 < r.length ? r[i + 2] : r[i + 1],
-                    cp1x = p1.x + (p2.x - p0.x) / 6,
-                    cp1y = p1.y + (p2.y - p0.y) / 6,
-                    cp2x = p2.x - (p3.x - p1.x) / 6,
-                    cp2y = p2.y - (p3.y - p1.y) / 6;
-                d += `C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y} `;
-            }
-        }
-        if (d) chart.appendChild(el('path', {class: 'line', d}));
+        // Map each known day to one of 8 block glyphs; unknown days become a
+        // gap so a missing stretch reads as a hole, not a flat low.
+        const spark = history.map(p => {
+            if (p === null || p === undefined) return ' ';
+            const t = span === 0 ? SPARK_TICKS.length - 1
+                : Math.round(((p - lo) / span) * (SPARK_TICKS.length - 1));
+            return SPARK_TICKS[t];
+        }).join('');
 
         const fmt = v => v.toLocaleString('es', currencyOptions);
-        chart.appendChild(el('text', {x: 2, y: padT + 4}, fmt(hi)));
-        chart.appendChild(el('text', {x: 2, y: padT + innerH}, fmt(lo)));
+        qs('#price-chart .spark').textContent = spark;
+        qs('#price-chart .from').textContent = `${fmt(lo)} – ${fmt(hi)}`;
 
         const dayMs = 86400 * 1000,
             endDate = new Date(endTs * 1000),
-            startDate = new Date(endDate.getTime() - n * dayMs);
-        const dateFmt = d => d.toLocaleDateString('es', {day: '2-digit', month: '2-digit'});
-        chart.appendChild(el('text', {x: padL, y: H - 4}, dateFmt(startDate)));
-        chart.appendChild(el('text', {x: padL + innerW, y: H - 4, 'text-anchor': 'end'}, dateFmt(new Date(endDate.getTime() - dayMs))));
+            startDate = new Date(endDate.getTime() - history.length * dayMs),
+            dateFmt = d => d.toLocaleDateString('es', {day: '2-digit', month: '2-digit'});
+        qs('#price-chart .to').textContent =
+            `${dateFmt(startDate)} – ${dateFmt(new Date(endDate.getTime() - dayMs))}`;
 
         chart.classList.remove('hidden');
     }
