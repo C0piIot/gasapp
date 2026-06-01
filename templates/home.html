@@ -103,7 +103,10 @@
         }
         #price-chart .spark {
             display: block;
-            font-family: monospace;
+            /* Pin a font whose block glyphs are bottom-aligned; Chrome's
+               default monospace fallback renders them with inconsistent
+               baselines, jittering the sparkline vertically. */
+            font-family: 'DejaVu Sans Mono', 'Noto Sans Mono', 'Liberation Mono', monospace;
             font-size: 1.2rem;
             line-height: 1;
             color: dimgray;
