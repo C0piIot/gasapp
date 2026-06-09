@@ -19,6 +19,7 @@
         body { font-family: system-ui, sans-serif; touch-action: manipulation; }
         html, body { height: 100%; overscroll-behavior: none; }
         body { padding:0; margin:0; display:flex; flex-direction: column; }
+        body { -webkit-user-select: none; user-select: none; }
         .hidden { display: none; }
         #map { flex:1; }
         h1 {
@@ -34,6 +35,7 @@
             margin-left: 1rem;
         }
         #station-info, #fuel-selector, #favorites { padding: 1rem; }
+        #station-info { -webkit-user-select: text; user-select: text; }
         #station-info p.prices>span { white-space: nowrap; margin-right: 12px; }
         #fuel-selector p { margin-top: 1rem; text-align: center;}
         #favorite-toggle {
