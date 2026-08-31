@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,8 +15,7 @@ import (
 )
 
 func TestStationsHandlerEmpty(t *testing.T) {
-	sc := &stationCache{db: newTestDB(t)}
-	w := doRequest(t, sc, "/stations/")
+	w := doRequest(t, newTestDB(t), "/stations/")
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", w.Code)
@@ -27,8 +27,7 @@ func TestStationsHandlerEmpty(t *testing.T) {
 }
 
 func TestStationsHandlerContentType(t *testing.T) {
-	sc := &stationCache{db: newTestDB(t)}
-	w := doRequest(t, sc, "/stations/")
+	w := doRequest(t, newTestDB(t), "/stations/")
 
 	if ct := w.Header().Get("Content-Type"); ct != "application/json" {
 		t.Errorf("Content-Type = %q, want application/json", ct)
@@ -41,8 +40,7 @@ func TestStationsHandlerCenter(t *testing.T) {
 	insertStation(t, database, 2, 41.4, -3.7, 1.6) // ~111 km north
 	insertStation(t, database, 3, 42.4, -3.7, 1.7) // ~222 km north
 
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?center=-3.7,40.4")
+	w := doRequest(t, database, "/stations/?center=-3.7,40.4")
 
 	rows := decodeStations(t, w)
 	if len(rows) != 3 {
@@ -57,8 +55,7 @@ func TestStationsHandlerCenter(t *testing.T) {
 }
 
 func TestStationsHandlerInvalidCenter(t *testing.T) {
-	sc := &stationCache{db: newTestDB(t)}
-	w := doRequest(t, sc, "/stations/?center=notvalid")
+	w := doRequest(t, newTestDB(t), "/stations/?center=notvalid")
 
 	// Falls back gracefully to returning all stations.
 	if w.Code != http.StatusOK {
@@ -72,8 +69,7 @@ func TestStationsHandlerByIDs(t *testing.T) {
 	insertStation(t, database, 2, 41.0, -3.0, 1.6)
 	insertStation(t, database, 3, 42.0, -3.0, 1.7)
 
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?ids=3,1,99")
+	w := doRequest(t, database, "/stations/?ids=3,1,99")
 
 	rows := decodeStations(t, w)
 	if len(rows) != 2 {
@@ -92,8 +88,7 @@ func TestStationsHandlerByIDsOverridesCenter(t *testing.T) {
 	insertStation(t, database, 1, 40.0, -3.0, 1.5)
 	insertStation(t, database, 2, 41.0, -3.0, 1.6)
 
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?ids=2&center=-3.0,40.0")
+	w := doRequest(t, database, "/stations/?ids=2&center=-3.0,40.0")
 
 	rows := decodeStations(t, w)
 	if len(rows) != 1 {
@@ -108,8 +103,7 @@ func TestStationsHandlerByIDsEmpty(t *testing.T) {
 	database := newTestDB(t)
 	insertStation(t, database, 1, 40.0, -3.0, 1.5)
 
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?ids=")
+	w := doRequest(t, database, "/stations/?ids=")
 
 	rows := decodeStations(t, w)
 	if len(rows) != 0 {
@@ -121,8 +115,7 @@ func TestStationsHandlerByIDsMalformed(t *testing.T) {
 	database := newTestDB(t)
 	insertStation(t, database, 1, 40.0, -3.0, 1.5)
 
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?ids=abc,xyz")
+	w := doRequest(t, database, "/stations/?ids=abc,xyz")
 
 	rows := decodeStations(t, w)
 	if len(rows) != 0 {
@@ -130,58 +123,11 @@ func TestStationsHandlerByIDsMalformed(t *testing.T) {
 	}
 }
 
-func TestStationsHandlerByIDsDoesNotMutateCache(t *testing.T) {
-	database := newTestDB(t)
-	insertStation(t, database, 1, 40.0, -3.0, 1.5)
-	insertStation(t, database, 2, 41.0, -3.0, 1.6)
-
-	sc := &stationCache{db: database}
-	// Prime the cache.
-	if _, _, _, err := sc.snapshot("petrol95"); err != nil {
-		t.Fatal(err)
-	}
-
-	doRequest(t, sc, "/stations/?ids=2")
-
-	stations, _, _, err := sc.snapshot("petrol95")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stations) != 2 {
-		t.Errorf("cache size = %d, want 2 (filter must not mutate the shared slice)", len(stations))
-	}
-}
-
-func TestStationCacheInvalidate(t *testing.T) {
-	database := newTestDB(t)
-	sc := &stationCache{db: database}
-
-	stations, _, _, err := sc.snapshot("petrol95")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stations) != 0 {
-		t.Fatalf("want 0 stations, got %d", len(stations))
-	}
-
-	insertStation(t, database, 99, 40.0, -3.0, 1.5)
-	sc.invalidate()
-
-	stations, _, _, err = sc.snapshot("petrol95")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stations) != 1 {
-		t.Fatalf("want 1 station after invalidate, got %d", len(stations))
-	}
-}
-
 func TestStationsHandlerIncludesHistory(t *testing.T) {
 	database := newTestDB(t)
 	insertStation(t, database, 1, 40.4, -3.7, 1.5)
 
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/?fuel=petrol95")
+	w := doRequest(t, database, "/stations/?center=-3.7,40.4&fuel=petrol95")
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", w.Code)
@@ -221,8 +167,7 @@ func TestStationsHandlerIncludesHistory(t *testing.T) {
 }
 
 func TestStationsHandlerRejectsUnknownFuel(t *testing.T) {
-	sc := &stationCache{db: newTestDB(t)}
-	w := doRequest(t, sc, "/stations/?fuel=hydrogen")
+	w := doRequest(t, newTestDB(t), "/stations/?fuel=hydrogen")
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", w.Code)
 	}
@@ -231,8 +176,7 @@ func TestStationsHandlerRejectsUnknownFuel(t *testing.T) {
 func TestStationsHandlerDefaultsToPetrol95(t *testing.T) {
 	database := newTestDB(t)
 	insertStation(t, database, 1, 40.4, -3.7, 1.5)
-	sc := &stationCache{db: database}
-	w := doRequest(t, sc, "/stations/")
+	w := doRequest(t, database, "/stations/?center=-3.7,40.4")
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", w.Code)
 	}
@@ -286,11 +230,11 @@ func insertStation(t *testing.T, database *sql.DB, id int64, lat, lng, price flo
 	}
 }
 
-func doRequest(t *testing.T, sc *stationCache, url string) *httptest.ResponseRecorder {
+func doRequest(t *testing.T, database *sql.DB, url string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, url, nil)
 	w := httptest.NewRecorder()
-	stationsHandler(sc)(w, req)
+	stationsHandler(database)(w, req)
 	return w
 }
 
@@ -303,4 +247,107 @@ func decodeStations(t *testing.T, w *httptest.ResponseRecorder) [][]any {
 		t.Fatalf("decode response: %v\nbody: %s", err, w.Body.String())
 	}
 	return body.Stations
+}
+
+func TestStationsHandlerUnfilteredIsLimited(t *testing.T) {
+	database := newTestDB(t)
+	for i := int64(1); i <= nearbyLimit+25; i++ {
+		insertStation(t, database, i, 40.0+float64(i)/1000, -3.0, 1.5)
+	}
+
+	w := doRequest(t, database, "/stations/")
+
+	rows := decodeStations(t, w)
+	if len(rows) != nearbyLimit {
+		t.Fatalf("got %d stations, want %d", len(rows), nearbyLimit)
+	}
+	// Bounded like the map query, and still carrying history.
+	hist, ok := rows[0][11].([]any)
+	if !ok || len(hist) != station.HistoryDays {
+		t.Fatalf("history missing or short: %T", rows[0][11])
+	}
+	if hist[len(hist)-1] == nil {
+		t.Error("today's slot should hold the price the upsert recorded")
+	}
+}
+
+func TestStationsHandlerByIDsIncludesHistory(t *testing.T) {
+	database := newTestDB(t)
+	insertStation(t, database, 7, 40.4, -3.7, 1.5)
+
+	w := doRequest(t, database, "/stations/?ids=7")
+
+	rows := decodeStations(t, w)
+	if len(rows) != 1 {
+		t.Fatalf("got %d rows, want 1", len(rows))
+	}
+	hist, ok := rows[0][11].([]any)
+	if !ok || len(hist) != station.HistoryDays {
+		t.Fatalf("history missing or short: %T", rows[0][11])
+	}
+	if hist[len(hist)-1] == nil {
+		t.Error("today's slot should hold the price the upsert recorded")
+	}
+}
+
+func TestStationsHandlerCenterLimitsResults(t *testing.T) {
+	database := newTestDB(t)
+	for i := int64(1); i <= nearbyLimit+25; i++ {
+		insertStation(t, database, i, 40.0+float64(i)/1000, -3.0, 1.5)
+	}
+
+	w := doRequest(t, database, "/stations/?center=-3.0,40.0")
+
+	rows := decodeStations(t, w)
+	if len(rows) != nearbyLimit {
+		t.Errorf("got %d stations, want %d", len(rows), nearbyLimit)
+	}
+	if id := int64(rows[0][0].(float64)); id != 1 {
+		t.Errorf("closest ID = %d, want 1", id)
+	}
+}
+
+func TestParseCenter(t *testing.T) {
+	cases := []struct {
+		name     string
+		raw      string
+		lat, lng float64
+		ok       bool
+	}{
+		{"lng first", "-3.70,40.41", 40.41, -3.70, true},
+		{"integers", "2,41", 41, 2, true},
+		{"missing part", "40.41", 0, 0, false},
+		{"not a number", "notvalid,40.41", 0, 0, false},
+		{"empty", "", 0, 0, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			lat, lng, ok := parseCenter(c.raw)
+			if ok != c.ok {
+				t.Fatalf("ok = %v, want %v", ok, c.ok)
+			}
+			if !ok {
+				return
+			}
+			if lat != c.lat || lng != c.lng {
+				t.Errorf("lat,lng = %v,%v, want %v,%v", lat, lng, c.lat, c.lng)
+			}
+		})
+	}
+}
+
+func TestParseIDs(t *testing.T) {
+	t.Run("skips malformed entries", func(t *testing.T) {
+		got := parseIDs("1,abc,3")
+		if len(got) != 2 || got[0] != 1 || got[1] != 3 {
+			t.Errorf("ids = %v, want [1 3]", got)
+		}
+	})
+
+	t.Run("caps the list", func(t *testing.T) {
+		raw := strings.TrimSuffix(strings.Repeat("1,", maxIDs+10), ",")
+		if got := parseIDs(raw); len(got) != maxIDs {
+			t.Errorf("len = %d, want %d", len(got), maxIDs)
+		}
+	})
 }
