@@ -9,15 +9,26 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
 // buildVersion is set at build time via -ldflags "-X main.buildVersion=..."
 var buildVersion = "dev"
+
+const (
+	// nearbyLimit caps the map query and the unfiltered listing. The client
+	// only draws what is in view, and every response carries price history, so
+	// the row count has to stay bounded whichever way the query arrives.
+	nearbyLimit = 200
+	// maxIDs bounds the favorites query. It has to stay well clear of any
+	// plausible favorites list: the client deletes from local storage every id
+	// the response omits, so truncating here would wipe a user's favorites.
+	maxIDs = 1000
+)
 
 type templateData struct {
 	BuildVersion string
@@ -45,9 +56,8 @@ func main() {
 	}
 
 	data := templateData{BuildVersion: buildVersion}
-	sc := &stationCache{db: database}
 
-	go runUpdates(database, sc)
+	go runUpdates(database)
 
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(*staticDir))))
@@ -55,7 +65,7 @@ func main() {
 		w.Header().Set("Service-Worker-Allowed", "/")
 		http.ServeFile(w, r, filepath.Join(*staticDir, "worker.js"))
 	})
-	mux.HandleFunc("/stations/", stationsHandler(sc))
+	mux.HandleFunc("/stations/", stationsHandler(database))
 	mux.HandleFunc("/offline/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		tmpl.ExecuteTemplate(w, "offline.html", data)
@@ -69,81 +79,20 @@ func main() {
 	log.Fatal(http.ListenAndServe(*addr, mux))
 }
 
-// stationCache holds all recent stations in memory, refreshed after each
-// update. It also caches per-fuel daily price history aligned positionally
-// with stations, so /stations/?fuel=... can answer without a DB roundtrip.
-type stationCache struct {
-	mu       sync.RWMutex
-	db       *sql.DB
-	stations []station.Station
-	history  map[string][]station.DailyHistory
-	endTs    int64 // window end (exclusive) used when computing history
-	expires  time.Time
-}
-
-func (sc *stationCache) invalidate() {
-	sc.mu.Lock()
-	sc.expires = time.Time{}
-	sc.mu.Unlock()
-}
-
-// snapshot returns the cached stations, the per-station history for the given
-// fuel (parallel to stations), and the unix-second window-end timestamp used
-// to compute that history. The cache is refreshed if expired.
-func (sc *stationCache) snapshot(fuel string) ([]station.Station, []station.DailyHistory, int64, error) {
-	sc.mu.RLock()
-	if time.Now().Before(sc.expires) {
-		s := sc.stations
-		h := sc.history[fuel]
-		end := sc.endTs
-		sc.mu.RUnlock()
-		return s, h, end, nil
-	}
-	sc.mu.RUnlock()
-
-	sc.mu.Lock()
-	defer sc.mu.Unlock()
-	// Re-check after acquiring write lock (another goroutine may have refreshed).
-	if time.Now().Before(sc.expires) {
-		return sc.stations, sc.history[fuel], sc.endTs, nil
-	}
-
-	stations, err := station.All(sc.db)
-	if err != nil {
-		return nil, nil, 0, err
-	}
-	now := time.Now()
-	history := make(map[string][]station.DailyHistory, len(station.AllowedFuels))
-	for _, f := range station.AllowedFuels {
-		h, err := station.HistoryByFuel(sc.db, f, stations, now)
-		if err != nil {
-			return nil, nil, 0, err
-		}
-		history[f] = h
-	}
-	sc.stations = stations
-	sc.history = history
-	sc.endTs = station.WindowEnd(now).Unix()
-	sc.expires = now.Add(24 * time.Hour)
-	return sc.stations, sc.history[fuel], sc.endTs, nil
-}
-
 // runUpdates fetches prices immediately on startup, then repeats every hour.
-// Mirrors the original entrypoint.sh while loop.
-func runUpdates(database *sql.DB, sc *stationCache) {
+func runUpdates(database *sql.DB) {
 	for {
 		log.Println("updating prices...")
 		if err := station.UpdatePrices(database); err != nil {
 			log.Println("update prices:", err)
 		} else {
 			log.Println("prices updated")
-			sc.invalidate()
 		}
 		time.Sleep(time.Hour)
 	}
 }
 
-func stationsHandler(sc *stationCache) http.HandlerFunc {
+func stationsHandler(database *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fuel := r.URL.Query().Get("fuel")
 		if fuel == "" {
@@ -154,52 +103,23 @@ func stationsHandler(sc *stationCache) http.HandlerFunc {
 			return
 		}
 
-		stations, history, endTs, err := sc.snapshot(fuel)
+		stations, err := requestedStations(database, r.URL.Query())
 		if err != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
-			log.Println("station cache:", err)
+			log.Println("stations:", err)
 			return
 		}
 
-		indices := make([]int, len(stations))
-		for i := range stations {
-			indices[i] = i
-		}
-		if r.URL.Query().Has("ids") {
-			raw := r.URL.Query().Get("ids")
-			parts := strings.Split(raw, ",")
-			idxByID := make(map[int64]int, len(stations))
-			for i, s := range stations {
-				idxByID[s.ID] = i
-			}
-			indices = make([]int, 0, len(parts))
-			for _, p := range parts {
-				id, err := strconv.ParseInt(p, 10, 64)
-				if err != nil {
-					continue
-				}
-				if j, ok := idxByID[id]; ok {
-					indices = append(indices, j)
-				}
-			}
-		} else if center := r.URL.Query().Get("center"); center != "" {
-			parts := strings.SplitN(center, ",", 2)
-			if len(parts) == 2 {
-				lng, errLng := strconv.ParseFloat(parts[0], 64)
-				lat, errLat := strconv.ParseFloat(parts[1], 64)
-				if errLat == nil && errLng == nil {
-					indices = station.ByDistanceIndices(stations, lat, lng, 200)
-				}
-			}
+		now := time.Now()
+		history, err := station.HistoryByFuel(database, fuel, stations, now)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			log.Println("station history:", err)
+			return
 		}
 
-		rows := make([][]any, len(indices))
-		for i, j := range indices {
-			s := stations[j]
-			var hist station.DailyHistory
-			if history != nil {
-				hist = history[j]
-			}
+		rows := make([][]any, len(stations))
+		for i, s := range stations {
 			rows[i] = []any{
 				s.ID,
 				s.Name,
@@ -212,13 +132,13 @@ func stationsHandler(sc *stationCache) http.HandlerFunc {
 				s.PostalCode,
 				[]float64{s.Lng, s.Lat},
 				float64(s.Updated),
-				hist,
+				history[i],
 			}
 		}
 
 		data, err := json.Marshal(map[string]any{
 			"stations":    rows,
-			"history_end": endTs,
+			"history_end": station.WindowEnd(now).Unix(),
 		})
 		if err != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
@@ -228,4 +148,46 @@ func stationsHandler(sc *stationCache) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}
+}
+
+// requestedStations resolves a query into the stations to return. Every branch
+// is bounded, so attaching price history costs one bind parameter and one index
+// seek per station returned rather than per station in the table.
+func requestedStations(database *sql.DB, q url.Values) ([]station.Station, error) {
+	if q.Has("ids") {
+		return station.ByIDs(database, parseIDs(q.Get("ids")))
+	}
+	if center := q.Get("center"); center != "" {
+		if lat, lng, ok := parseCenter(center); ok {
+			return station.Nearby(database, lat, lng, nearbyLimit)
+		}
+	}
+	return station.Listing(database, nearbyLimit)
+}
+
+func parseIDs(raw string) []int64 {
+	parts := strings.Split(raw, ",")
+	if len(parts) > maxIDs {
+		parts = parts[:maxIDs]
+	}
+	ids := make([]int64, 0, len(parts))
+	for _, p := range parts {
+		id, err := strconv.ParseInt(p, 10, 64)
+		if err != nil {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// parseCenter reads the "lng,lat" pair the client sends: longitude first.
+func parseCenter(raw string) (lat, lng float64, ok bool) {
+	parts := strings.SplitN(raw, ",", 2)
+	if len(parts) != 2 {
+		return 0, 0, false
+	}
+	lng, errLng := strconv.ParseFloat(parts[0], 64)
+	lat, errLat := strconv.ParseFloat(parts[1], 64)
+	return lat, lng, errLat == nil && errLng == nil
 }

@@ -30,7 +30,8 @@ func WindowEnd(now time.Time) time.Time {
 }
 
 // HistoryByFuel returns the per-station daily-max price history for one fuel,
-// over the HistoryDays days ending at now. The result is parallel to stations:
+// over the HistoryDays days ending at now. It binds one parameter per station,
+// so callers must pass a bounded list rather than the whole table. The result is parallel to stations:
 // result[i] is the history for stations[i]. Days with no observation carry
 // forward the most recent prior known price; a NULL-price observation (fuel
 // disappearance) resets the carried value to nil from that day forward until
@@ -50,25 +51,38 @@ func HistoryByFuel(db *sql.DB, fuel string, stations []Station, now time.Time) (
 	startTs := start.Unix()
 	endTs := end.Unix()
 
+	// Both queries are scoped to the stations being returned. Without the
+	// station_id list the index (station_id, fuel, observed_at DESC) cannot be
+	// seeked, because its leading column is absent from the filter, and SQLite
+	// falls back to scanning the whole table including the history older than
+	// the window that is never read.
 	idx := make(map[int64]int, len(stations))
+	stationArgs := make([]any, len(stations))
 	for i, s := range stations {
 		idx[s.ID] = i
+		stationArgs[i] = s.ID
+	}
+	idList := placeholders(len(stations))
+	withStations := func(head any, tail ...any) []any {
+		args := make([]any, 0, len(stationArgs)+len(tail)+1)
+		args = append(args, head)
+		args = append(args, stationArgs...)
+		return append(args, tail...)
 	}
 
 	// Seed: most recent observation strictly before the window per station.
-	// The composite index (station_id, fuel, observed_at DESC) makes the
-	// inner MAX cheap. We only care about stations we're returning.
 	seedRows, err := db.Query(`
 		SELECT ph.station_id, ph.price
 		FROM price_history ph
 		WHERE ph.fuel = ?
+		  AND ph.station_id IN (`+idList+`)
 		  AND ph.observed_at < ?
 		  AND ph.observed_at = (
 		      SELECT MAX(observed_at) FROM price_history
 		      WHERE station_id = ph.station_id
 		        AND fuel = ph.fuel
 		        AND observed_at < ?
-		  )`, fuel, startTs, startTs)
+		  )`, withStations(fuel, startTs, startTs)...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +106,10 @@ func HistoryByFuel(db *sql.DB, fuel string, stations []Station, now time.Time) (
 	winRows, err := db.Query(`
 		SELECT station_id, observed_at, price
 		FROM price_history
-		WHERE fuel = ? AND observed_at >= ? AND observed_at < ?
-		ORDER BY station_id, observed_at`, fuel, startTs, endTs)
+		WHERE fuel = ?
+		  AND station_id IN (`+idList+`)
+		  AND observed_at >= ? AND observed_at < ?
+		ORDER BY station_id, observed_at`, withStations(fuel, startTs, endTs)...)
 	if err != nil {
 		return nil, err
 	}

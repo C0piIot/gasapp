@@ -7,7 +7,14 @@ import (
 )
 
 func Open(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path+"?_journal_mode=WAL&_foreign_keys=on")
+	// modernc.org/sqlite only reads pragmas through _pragma=; the _journal_mode
+	// and _foreign_keys forms are mattn/go-sqlite3 syntax and are ignored
+	// silently. busy_timeout matters because reads now hit the DB on every
+	// request, concurrently with the hourly price update transaction.
+	db, err := sql.Open("sqlite", path+
+		"?_pragma=journal_mode(WAL)"+
+		"&_pragma=foreign_keys(on)"+
+		"&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +56,10 @@ func migrate(db *sql.DB) error {
 	}
 	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS price_history_station_fuel_observed
 		ON price_history (station_id, fuel, observed_at DESC)`); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS stations_lat_lng
+		ON stations (lat, lng)`); err != nil {
 		return err
 	}
 	return nil

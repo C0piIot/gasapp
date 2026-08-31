@@ -398,3 +398,332 @@ func TestUpsertHistoryAtomicWithStation(t *testing.T) {
 		t.Errorf("history after rollback = %d, want 0", len(rows))
 	}
 }
+
+func insertAt(t *testing.T, database *sql.DB, id int64, lat, lng float64) {
+	t.Helper()
+	s := baseStation(time.Now().Unix())
+	s.ID = id
+	s.Lat = lat
+	s.Lng = lng
+	s.Petrol95 = ptr(1.659)
+	if err := Upsert(database, s); err != nil {
+		t.Fatal("upsert:", err)
+	}
+}
+
+func ids(stations []Station) []int64 {
+	out := make([]int64, len(stations))
+	for i, s := range stations {
+		out[i] = s.ID
+	}
+	return out
+}
+
+func distances(stations []Station, lat, lng float64) []float64 {
+	out := make([]float64, len(stations))
+	for i, s := range stations {
+		out[i] = haversine(lat, lng, s.Lat, s.Lng)
+	}
+	return out
+}
+
+func equalIDs(got []Station, want []int64) bool {
+	g := ids(got)
+	if len(g) != len(want) {
+		return false
+	}
+	for i := range g {
+		if g[i] != want[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestNearby(t *testing.T) {
+	database, err := db.Open(filepath.Join(t.TempDir(), "test.sqlite3"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+
+	insertAt(t, database, 1, 1, 0) // ~111 km
+	insertAt(t, database, 2, 2, 0) // ~222 km
+	insertAt(t, database, 3, 3, 0) // ~333 km
+
+	t.Run("sorted by distance", func(t *testing.T) {
+		got, err := Nearby(database, 0, 0, 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !equalIDs(got, []int64{1, 2, 3}) {
+			t.Errorf("ids = %v, want [1 2 3]", ids(got))
+		}
+	})
+
+	t.Run("limit is respected", func(t *testing.T) {
+		got, err := Nearby(database, 0, 0, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !equalIDs(got, []int64{1, 2}) {
+			t.Errorf("ids = %v, want [1 2]", ids(got))
+		}
+	})
+
+	t.Run("zero limit", func(t *testing.T) {
+		got, err := Nearby(database, 0, 0, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("empty table", func(t *testing.T) {
+		empty, err := db.Open(filepath.Join(t.TempDir(), "empty.sqlite3"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer empty.Close()
+		got, err := Nearby(empty, 40, -3, 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("stale stations are excluded", func(t *testing.T) {
+		s := baseStation(time.Now().Add(-8 * 24 * time.Hour).Unix())
+		s.ID = 99
+		s.Lat, s.Lng = 0.01, 0.01 // nearest by far, but dropped from the feed
+		if err := Upsert(database, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := Nearby(database, 0, 0, 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range got {
+			if s.ID == 99 {
+				t.Fatal("stale station 99 must not be returned")
+			}
+		}
+	})
+}
+
+// The search box only guarantees a complete answer inside its inscribed
+// circle. With enough candidates sitting in a corner of the first box, a
+// nearer station just past an edge would be missed unless the box grows.
+func TestNearbyGrowsBoxPastCornerCandidates(t *testing.T) {
+	database, err := db.Open(filepath.Join(t.TempDir(), "test.sqlite3"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+
+	// nearbySearchBox is 0.15 degrees, so its inscribed circle is ~16.7 km.
+	insertAt(t, database, 1, 0.140, 0.140) // in the first box, corner: ~22.0 km
+	insertAt(t, database, 2, 0.145, 0.145) // in the first box, corner: ~22.8 km
+	insertAt(t, database, 3, 0.160, 0.000) // outside the first box: ~17.8 km
+
+	got, err := Nearby(database, 0, 0, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !equalIDs(got, []int64{3, 1}) {
+		t.Errorf("ids = %v, want [3 1]: station 3 is nearer than both corner stations", ids(got))
+	}
+}
+
+func TestNearbyMatchesBruteForce(t *testing.T) {
+	database, err := db.Open(filepath.Join(t.TempDir(), "test.sqlite3"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+
+	// A deterministic spread across the peninsula, dense enough that the box
+	// resolves without expanding for some centres and has to grow for others.
+	id := int64(1)
+	for lat := 36.0; lat <= 43.0; lat += 0.5 {
+		for lng := -8.0; lng <= 3.0; lng += 0.5 {
+			insertAt(t, database, id, lat, lng)
+			id++
+		}
+	}
+
+	all, err := All(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	centres := []struct {
+		name     string
+		lat, lng float64
+	}{
+		{"middle of the grid", 40.0, -3.0},
+		{"corner of the grid", 36.0, -8.0},
+		{"off the grid", 43.5, 3.5},
+	}
+	for _, c := range centres {
+		t.Run(c.name, func(t *testing.T) {
+			for _, limit := range []int{1, 5, 50} {
+				got, err := Nearby(database, c.lat, c.lng, limit)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := ByDistance(all, c.lat, c.lng, limit)
+				// Compare distances, not ids: a regular grid produces exact
+				// ties and the sort is not stable, so tied stations may come
+				// back in either order without the answer being wrong.
+				gotKm := distances(got, c.lat, c.lng)
+				wantKm := distances(want, c.lat, c.lng)
+				if len(gotKm) != len(wantKm) {
+					t.Fatalf("limit %d: len = %d, want %d", limit, len(gotKm), len(wantKm))
+				}
+				for i := range gotKm {
+					if math.Abs(gotKm[i]-wantKm[i]) > 0.001 {
+						t.Fatalf("limit %d: distance[%d] = %.3f km, want %.3f km",
+							limit, i, gotKm[i], wantKm[i])
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestByIDs(t *testing.T) {
+	database, err := db.Open(filepath.Join(t.TempDir(), "test.sqlite3"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+
+	insertAt(t, database, 1, 40.0, -3.0)
+	insertAt(t, database, 2, 41.0, -3.0)
+	insertAt(t, database, 3, 42.0, -3.0)
+
+	t.Run("request order is preserved", func(t *testing.T) {
+		got, err := ByIDs(database, []int64{3, 1, 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !equalIDs(got, []int64{3, 1, 2}) {
+			t.Errorf("ids = %v, want [3 1 2]", ids(got))
+		}
+	})
+
+	t.Run("unknown ids are skipped", func(t *testing.T) {
+		got, err := ByIDs(database, []int64{2, 999})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !equalIDs(got, []int64{2}) {
+			t.Errorf("ids = %v, want [2]", ids(got))
+		}
+	})
+
+	t.Run("empty input", func(t *testing.T) {
+		got, err := ByIDs(database, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("stale stations are excluded", func(t *testing.T) {
+		s := baseStation(time.Now().Add(-8 * 24 * time.Hour).Unix())
+		s.ID = 77
+		if err := Upsert(database, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := ByIDs(database, []int64{77})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("len = %d, want 0 for a station outside the freshness window", len(got))
+		}
+	})
+}
+
+func TestPlaceholders(t *testing.T) {
+	cases := []struct {
+		n    int
+		want string
+	}{
+		{0, ""},
+		{1, "?"},
+		{3, "?,?,?"},
+	}
+	for _, c := range cases {
+		if got := placeholders(c.n); got != c.want {
+			t.Errorf("placeholders(%d) = %q, want %q", c.n, got, c.want)
+		}
+	}
+}
+
+func TestListing(t *testing.T) {
+	database, err := db.Open(filepath.Join(t.TempDir(), "test.sqlite3"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+
+	for i := int64(1); i <= 5; i++ {
+		insertAt(t, database, i, 40.0+float64(i), -3.0)
+	}
+
+	t.Run("limit is respected", func(t *testing.T) {
+		got, err := Listing(database, 3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 3 {
+			t.Errorf("len = %d, want 3", len(got))
+		}
+	})
+
+	t.Run("limit larger than the table", func(t *testing.T) {
+		got, err := Listing(database, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 5 {
+			t.Errorf("len = %d, want 5", len(got))
+		}
+	})
+
+	t.Run("zero limit", func(t *testing.T) {
+		got, err := Listing(database, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("stale stations are excluded", func(t *testing.T) {
+		s := baseStation(time.Now().Add(-8 * 24 * time.Hour).Unix())
+		s.ID = 88
+		if err := Upsert(database, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := Listing(database, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range got {
+			if s.ID == 88 {
+				t.Fatal("stale station 88 must not be listed")
+			}
+		}
+	})
+}
