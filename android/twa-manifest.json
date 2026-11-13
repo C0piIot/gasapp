@@ -19,7 +19,7 @@
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./signing.keystore",
-    "alias": "my-key-alias"
+    "alias": "dropdatabase"
   },
   "appVersionName": "1",
   "appVersionCode": 1,
