@@ -26,7 +26,15 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm install -g @bubblewrap/cli
+      - run: npm install -g @bubblewrap/cli@1.27.0
+
+      # Bubblewrap only recognises the legacy SDK layout (tools/bin/sdkmanager)
+      # and would otherwise prompt interactively to install its build-tools.
+      - name: Prepare Android SDK
+        run: |
+          ln -sfn "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/tools"
+          yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/tools/bin/sdkmanager" "build-tools;36.1.0"
 
       - name: Configure Bubblewrap
         run: |
