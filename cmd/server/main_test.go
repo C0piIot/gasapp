@@ -443,3 +443,76 @@ func TestManifestShortcuts(t *testing.T) {
 		})
 	}
 }
+
+func TestAndroidPackageConsistent(t *testing.T) {
+	readJSON := func(t *testing.T, path string, v any) {
+		t.Helper()
+		raw, err := os.ReadFile(filepath.Join("..", "..", path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := json.Unmarshal(raw, v); err != nil {
+			t.Fatalf("parse %s: %v", path, err)
+		}
+	}
+
+	var twa struct {
+		PackageID      string `json:"packageId"`
+		Host           string `json:"host"`
+		WebManifestURL string `json:"webManifestUrl"`
+	}
+	readJSON(t, "android/twa-manifest.json", &twa)
+
+	var links []struct {
+		Target struct {
+			PackageName string `json:"package_name"`
+		} `json:"target"`
+	}
+	readJSON(t, "static/assetlinks.json", &links)
+
+	var manifest struct {
+		Scope   string `json:"scope"`
+		Related []struct {
+			Platform string `json:"platform"`
+			ID       string `json:"id"`
+		} `json:"related_applications"`
+	}
+	readJSON(t, "static/site.webmanifest", &manifest)
+
+	// A package mismatch with assetlinks silently degrades the TWA to a Custom
+	// Tab with a URL bar instead of failing the build.
+	t.Run("assetlinks", func(t *testing.T) {
+		for _, l := range links {
+			if l.Target.PackageName == twa.PackageID {
+				return
+			}
+		}
+		t.Errorf("no assetlinks entry for %s", twa.PackageID)
+	})
+
+	t.Run("related_applications", func(t *testing.T) {
+		for _, r := range manifest.Related {
+			if r.Platform == "play" && r.ID == twa.PackageID {
+				return
+			}
+		}
+		t.Errorf("no play related_application for %s", twa.PackageID)
+	})
+
+	t.Run("host", func(t *testing.T) {
+		scope, err := url.Parse(manifest.Scope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if scope.Host != twa.Host {
+			t.Errorf("twa host = %q, manifest scope host = %q", twa.Host, scope.Host)
+		}
+		wm, err := url.Parse(twa.WebManifestURL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if wm.Host != twa.Host || wm.Path != "/static/site.webmanifest" {
+			t.Errorf("webManifestUrl = %q", twa.WebManifestURL)
+		}
+	})
+}
