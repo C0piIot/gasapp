@@ -1,4 +1,3 @@
 *
 !.gitignore
 !twa-manifest.json
-!request-location-on-launch.py

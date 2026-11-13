@@ -54,7 +54,6 @@ jobs:
           mv tmp.json twa-manifest.json
 
       - run: bubblewrap update --skipVersionUpgrade
-      - run: python3 request-location-on-launch.py app/src/main/java
       - run: bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
