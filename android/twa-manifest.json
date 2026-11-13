@@ -1,0 +1,59 @@
+{
+  "packageId": "es.dropdatabase.gasapp.twa",
+  "host": "gasapp.dropdatabase.es",
+  "name": "GasApp",
+  "launcherName": "GasApp",
+  "display": "standalone",
+  "orientation": "any",
+  "themeColor": "#000000",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://gasapp.dropdatabase.es/static/icon-any-512.png",
+  "maskableIconUrl": "https://gasapp.dropdatabase.es/static/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./signing.keystore",
+    "alias": "dropdatabase"
+  },
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Favoritos",
+      "shortName": "Favoritos",
+      "url": "https://gasapp.dropdatabase.es/?favoritos",
+      "chosenIconUrl": "https://gasapp.dropdatabase.es/static/icon-any-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://gasapp.dropdatabase.es/static/site.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://gasapp.dropdatabase.es/",
+  "minSdkVersion": 21,
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [
+    {
+      "protocol": "web+gasapp",
+      "url": "https://gasapp.dropdatabase.es/#%s"
+    }
+  ]
+}
