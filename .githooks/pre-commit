@@ -4,8 +4,8 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-# Match the Go version declared in go.mod
-go_image="golang:1.25-alpine"
+go_version="$(awk '/^go /{split($2, v, "."); print v[1] "." v[2]}' go.mod)"
+go_image="golang:${go_version}-alpine"
 
 echo "pre-commit: running 'go test ./...' inside ${go_image}"
 

@@ -21,7 +21,7 @@ Guidance for AI coding agents working in this repo. Read before making changes.
 
 ## Coding style
 
-- Target Go version is in `go.mod` (currently 1.25). Don't pin a different version in CI or Dockerfiles.
+- Target Go version is in `go.mod` (currently 1.26). Don't pin a different version in CI or Dockerfiles.
 - Standard `gofmt` / `go vet` — no extra linters configured, so don't introduce style churn.
 - Keep functions small and named for what they return, not how they work (see `firstNonEmpty`, `spanishFloat`, `titleCase`).
 - Prefer pure helpers over methods on types when there's no state.
