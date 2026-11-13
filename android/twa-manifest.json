@@ -12,7 +12,7 @@
   "navigationDividerColor": "#000000",
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#FFFFFF",
-  "enableNotifications": true,
+  "enableNotifications": false,
   "startUrl": "/",
   "iconUrl": "https://gasapp.dropdatabase.es/static/icon-any-512.png",
   "maskableIconUrl": "https://gasapp.dropdatabase.es/static/icon-maskable-512.png",
