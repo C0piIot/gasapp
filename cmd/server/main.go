@@ -65,6 +65,7 @@ func main() {
 		w.Header().Set("Service-Worker-Allowed", "/")
 		http.ServeFile(w, r, filepath.Join(*staticDir, "worker.js"))
 	})
+	mux.HandleFunc("/.well-known/assetlinks.json", assetLinksHandler(*staticDir))
 	mux.HandleFunc("/stations/", stationsHandler(database))
 	mux.HandleFunc("/offline/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -89,6 +90,15 @@ func runUpdates(database *sql.DB) {
 			log.Println("prices updated")
 		}
 		time.Sleep(time.Hour)
+	}
+}
+
+// Android only trusts the TWA (no URL bar) if this is served as application/json
+// at this exact path.
+func assetLinksHandler(staticDir string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		http.ServeFile(w, r, filepath.Join(staticDir, "assetlinks.json"))
 	}
 }
 

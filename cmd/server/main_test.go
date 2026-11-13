@@ -516,3 +516,20 @@ func TestAndroidPackageConsistent(t *testing.T) {
 		}
 	})
 }
+
+func TestAssetLinksHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/.well-known/assetlinks.json", nil)
+	w := httptest.NewRecorder()
+	assetLinksHandler(filepath.Join("..", "..", "static"))(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", ct)
+	}
+	var links []map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &links); err != nil {
+		t.Errorf("body is not JSON: %v", err)
+	}
+}
